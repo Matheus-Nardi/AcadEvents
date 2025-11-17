@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class ConviteAvaliacaoRepository : BaseRepository<ConviteAvaliacao>
 {
-    public ConviteAvaliacaoRepository(DbContext db) : base(db) { }
+    public ConviteAvaliacaoRepository(AcadEventsDbContext db) : base(db) { }
 }
 

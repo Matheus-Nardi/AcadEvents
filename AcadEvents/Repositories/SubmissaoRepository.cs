@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class SubmissaoRepository : BaseRepository<Submissao>
 {
-    public SubmissaoRepository(DbContext db) : base(db) { }
+    public SubmissaoRepository(AcadEventsDbContext db) : base(db) { }
 }
 

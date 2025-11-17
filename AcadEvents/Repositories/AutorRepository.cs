@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class AutorRepository : BaseRepository<Autor>
 {
-    public AutorRepository(DbContext db) : base(db) { }
+    public AutorRepository(AcadEventsDbContext db) : base(db) { }
 }
 

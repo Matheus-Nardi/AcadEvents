@@ -1,4 +1,5 @@
 using AcadEvents.Repositories;
+using AcadEvents.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,9 +8,9 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
 
-// TODO: Adicionar DbContext quando criado
-// builder.Services.AddDbContext<SeuDbContext>(options => 
-//     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Configuração do DbContext
+builder.Services.AddDbContext<AcadEventsDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Injeção de dependência dos repositórios
 builder.Services.AddScoped<AutorRepository>();

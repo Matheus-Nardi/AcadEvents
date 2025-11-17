@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class PerfilORCIDRepository : BaseRepository<PerfilORCID>
 {
-    public PerfilORCIDRepository(DbContext db) : base(db) { }
+    public PerfilORCIDRepository(AcadEventsDbContext db) : base(db) { }
 }
 

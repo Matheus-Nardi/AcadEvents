@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: acadevents-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - acadevents-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: acadevents-backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AcadEventsDB;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=True
+    ports:
+      - "8080:8080"
+    depends_on:
+      - sqlserver
+    networks:
+      - acadevents-network
+    # O backend tentará conectar automaticamente quando o SQL Server estiver pronto
+    # O Entity Framework tem retry logic built-in
+
+volumes:
+  sqlserver_data:
+
+networks:
+  acadevents-network:
+    driver: bridge
+

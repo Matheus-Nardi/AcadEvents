@@ -1,12 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 
 namespace AcadEvents.Repositories;
 
 public class BaseRepository<T> : IRepository<T> where T : class
 {
-    protected readonly DbContext _db;
+    protected readonly AcadEventsDbContext _db;
 
-    public BaseRepository(DbContext db) { _db = db; }
+    public BaseRepository(AcadEventsDbContext db) { _db = db; }
 
     public Task<List<T>> FindAllAsync(CancellationToken cancellationToken = default)
         => _db.Set<T>().ToListAsync(cancellationToken);

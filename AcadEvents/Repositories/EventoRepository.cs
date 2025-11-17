@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class EventoRepository : BaseRepository<Evento>
 {
-    public EventoRepository(DbContext db) : base(db) { }
+    public EventoRepository(AcadEventsDbContext db) : base(db) { }
 }
 

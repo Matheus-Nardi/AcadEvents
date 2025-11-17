@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class OrganizadorRepository : BaseRepository<Organizador>
 {
-    public OrganizadorRepository(DbContext db) : base(db) { }
+    public OrganizadorRepository(AcadEventsDbContext db) : base(db) { }
 }
 

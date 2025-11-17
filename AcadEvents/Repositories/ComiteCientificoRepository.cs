@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class ComiteCientificoRepository : BaseRepository<ComiteCientifico>
 {
-    public ComiteCientificoRepository(DbContext db) : base(db) { }
+    public ComiteCientificoRepository(AcadEventsDbContext db) : base(db) { }
 }
 

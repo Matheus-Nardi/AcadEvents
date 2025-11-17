@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class AvaliadorRepository : BaseRepository<Avaliador>
 {
-    public AvaliadorRepository(DbContext db) : base(db) { }
+    public AvaliadorRepository(AcadEventsDbContext db) : base(db) { }
 }
 

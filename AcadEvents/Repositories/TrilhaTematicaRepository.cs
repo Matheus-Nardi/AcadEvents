@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class TrilhaTematicaRepository : BaseRepository<TrilhaTematica>
 {
-    public TrilhaTematicaRepository(DbContext db) : base(db) { }
+    public TrilhaTematicaRepository(AcadEventsDbContext db) : base(db) { }
 }
 

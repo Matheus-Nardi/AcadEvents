@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using AcadEvents.Data;
 using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
 public class NotificacaoRepository : BaseRepository<Notificacao>
 {
-    public NotificacaoRepository(DbContext db) : base(db) { }
+    public NotificacaoRepository(AcadEventsDbContext db) : base(db) { }
 }
 
