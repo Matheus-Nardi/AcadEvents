@@ -22,6 +22,12 @@ public class EventoRepository : BaseRepository<Evento>
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
+    public async Task<Evento?> FindByConfiguracaoEventoIdAsync(long configuracaoEventoId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Eventos
+            .FirstOrDefaultAsync(e => e.ConfiguracaoEventoId == configuracaoEventoId, cancellationToken);
+    }
+
     public async Task AddOrganizadorAsync(long eventoId, long organizadorId, CancellationToken cancellationToken = default)
     {
         var evento = await FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);

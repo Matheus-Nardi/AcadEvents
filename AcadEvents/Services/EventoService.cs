@@ -42,6 +42,11 @@ public class EventoService
         if (configuracao == null)
             throw new ArgumentException($"Configuração de Evento com Id {request.ConfiguracaoEventoId} não encontrada.");
 
+        // Verificar se a configuração já está associada a outro evento (relacionamento 1:1)
+        var eventoExistente = await _eventoRepository.FindByConfiguracaoEventoIdAsync(request.ConfiguracaoEventoId, cancellationToken);
+        if (eventoExistente != null)
+            throw new ArgumentException($"A configuração de evento com Id {request.ConfiguracaoEventoId} já está associada ao evento com Id {eventoExistente.Id}.");
+
         // Criar o evento
         var evento = new Evento
         {
@@ -73,6 +78,14 @@ public class EventoService
         var configuracao = await _configuracaoEventoRepository.FindByIdAsync(request.ConfiguracaoEventoId, cancellationToken);
         if (configuracao == null)
             throw new ArgumentException($"Configuração de Evento com Id {request.ConfiguracaoEventoId} não encontrada.");
+
+        // Verificar se a configuração já está associada a outro evento diferente (relacionamento 1:1)
+        if (evento.ConfiguracaoEventoId != request.ConfiguracaoEventoId)
+        {
+            var eventoComConfiguracao = await _eventoRepository.FindByConfiguracaoEventoIdAsync(request.ConfiguracaoEventoId, cancellationToken);
+            if (eventoComConfiguracao != null && eventoComConfiguracao.Id != id)
+                throw new ArgumentException($"A configuração de evento com Id {request.ConfiguracaoEventoId} já está associada ao evento com Id {eventoComConfiguracao.Id}.");
+        }
 
         // Atualizar propriedades
         evento.Nome = request.Nome;
