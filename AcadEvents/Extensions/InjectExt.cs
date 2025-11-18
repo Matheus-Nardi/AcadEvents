@@ -35,5 +35,6 @@ public static class InjectExt
         service.AddScoped<TrilhaService>();
         service.AddScoped<TrilhaTematicaService>();
         service.AddScoped<ConfiguracaoEventoService>();
+        service.AddScoped<ComiteCientificoService>();
     }
 }
