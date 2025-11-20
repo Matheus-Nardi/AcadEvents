@@ -3,6 +3,9 @@ using AcadEvents.Data;
 using AcadEvents.Extensions;
 using AcadEvents.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +32,36 @@ builder.Services.AddDbContext<AcadEventsDbContext>(options =>
             maxRetryCount: 10,
             maxRetryDelay: TimeSpan.FromSeconds(30),
             errorNumbersToAdd: null)));
+
+// Configuração de Autenticação JWT
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        // Valida a assinatura do token usando a chave secreta
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key não configurada"))),
+
+        // Valida quem emitiu o token
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+
+        // Valida para quem o token foi emitido
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+
+        // Valida o tempo de expiração
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero // Remove o tempo de tolerância padrão de 5 minutos
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // Injeção de dependência dos repositórios
 builder.Services.Inject();
@@ -60,6 +93,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Middlewares de autenticação e autorização (devem vir antes de MapControllers)
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.Run();

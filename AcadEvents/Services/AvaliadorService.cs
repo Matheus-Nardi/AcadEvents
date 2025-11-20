@@ -1,20 +1,23 @@
 using AcadEvents.Dtos;
 using AcadEvents.Models;
 using AcadEvents.Repositories;
-
+using AcadEvents.Services;
 namespace AcadEvents.Services;
 
 public class AvaliadorService
 {
     private readonly AvaliadorRepository _avaliadorRepository;
     private readonly PerfilORCIDRepository _perfilORCIDRepository;
-
+    private readonly HashService _hashService;
+    
     public AvaliadorService(
         AvaliadorRepository avaliadorRepository,
-        PerfilORCIDRepository perfilORCIDRepository)
+        PerfilORCIDRepository perfilORCIDRepository,
+        HashService hashService)
     {
         _avaliadorRepository = avaliadorRepository;
         _perfilORCIDRepository = perfilORCIDRepository;
+        _hashService = hashService;
     }
 
     public async Task<List<Avaliador>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -41,7 +44,7 @@ public class AvaliadorService
         {
             Nome = request.Nome,
             Email = request.Email,
-            Senha = request.Senha,
+            Senha = _hashService.HashPassword(request.Senha),
             Instituicao = request.Instituicao,
             Pais = request.Pais,
             DataCadastro = DateTime.UtcNow,

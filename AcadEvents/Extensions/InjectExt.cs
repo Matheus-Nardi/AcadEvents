@@ -1,5 +1,6 @@
 ﻿using AcadEvents.Repositories;
 using AcadEvents.Services;
+using AcadEvents.Services.Jwt;
 
 namespace AcadEvents.Extensions;
 
@@ -41,6 +42,8 @@ public static class InjectExt
         service.AddScoped<AvaliacaoService>();
         service.AddScoped<ConviteAvaliacaoService>();
         service.AddScoped<SubmissaoService>();
+        service.AddScoped<JwtService>();
+        service.AddScoped<HashService>();  
         // CrossrefService é registrado via AddHttpClient no Program.cs
     }
 }
