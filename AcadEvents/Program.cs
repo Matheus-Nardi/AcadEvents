@@ -57,8 +57,15 @@ builder.Services.AddAuthentication(options =>
 
         // Valida o tempo de expiração
         ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero // Remove o tempo de tolerância padrão de 5 minutos
+        ClockSkew = TimeSpan.Zero, // Remove o tempo de tolerância padrão de 5 minutos
+        
+        // Mapeia os claims do JWT corretamente
+        NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier,
+        RoleClaimType = System.Security.Claims.ClaimTypes.Role
     };
+    
+    // Garante que os claims do JWT sejam mapeados corretamente
+    options.MapInboundClaims = false;
 });
 
 builder.Services.AddAuthorization();

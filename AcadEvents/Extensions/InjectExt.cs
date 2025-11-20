@@ -43,7 +43,8 @@ public static class InjectExt
         service.AddScoped<ConviteAvaliacaoService>();
         service.AddScoped<SubmissaoService>();
         service.AddScoped<JwtService>();
-        service.AddScoped<HashService>();  
+        service.AddScoped<HashService>();
+        service.AddScoped<AuthService>();
         // CrossrefService é registrado via AddHttpClient no Program.cs
     }
 }
