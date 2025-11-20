@@ -85,5 +85,27 @@ public class ComiteCientificoRepository : BaseRepository<ComiteCientifico>
             await _db.SaveChangesAsync(cancellationToken);
         }
     }
-}
 
+    public async Task<bool> AvaliadorFazParteDoComiteDoEventoAsync(long avaliadorId, long eventoId, CancellationToken cancellationToken = default)
+    {
+        return await _db.ComitesCientificos
+            .Where(c => c.EventoId == eventoId)
+            .Include(c => c.MembrosAvaliadores)
+            .AnyAsync(c => c.MembrosAvaliadores.Any(a => a.Id == avaliadorId), cancellationToken);
+    }
+
+    public async Task<List<Avaliador>> FindAvaliadoresDoComiteDoEventoAsync(long eventoId, CancellationToken cancellationToken = default)
+    {
+        var comites = await _db.ComitesCientificos
+            .Where(c => c.EventoId == eventoId)
+            .Include(c => c.MembrosAvaliadores)
+            .ToListAsync(cancellationToken);
+
+        var avaliadores = comites
+            .SelectMany(c => c.MembrosAvaliadores)
+            .Distinct()
+            .ToList();
+
+        return avaliadores;
+    }
+}
