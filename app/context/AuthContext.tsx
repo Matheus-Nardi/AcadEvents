@@ -67,12 +67,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const userProfile = await authService.profile();
       setUser(userProfile);
-      router.push('/painel');
+      if (isAutor(userProfile)) {
+        router.push('/painel/autor');
+      } else if (isAvaliador(userProfile)) {
+        router.push('/painel/avaliador');
+      } else if (isOrganizador(userProfile)) {
+        router.push('/painel/organizador');
+      } else {
+        router.push('/');
+      }
       toast.success(`Bem vindo de volta, ${userProfile.nome}!`);
     } catch (error) {
       setUser(null);
       throw error;
     }
+    
   };
     
   const logout = async () => {
