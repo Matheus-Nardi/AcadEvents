@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -10,10 +11,22 @@ namespace AcadEvents.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AvaliacaoController(
-    AvaliacaoService service,
-    ConviteAvaliacaoService conviteService) : ControllerBase
+public class AvaliacaoController : ControllerBase
 {
+    private readonly AvaliacaoService service;
+    private readonly ConviteAvaliacaoService conviteService;
+    private readonly ILogger<AvaliacaoController> logger;
+
+    public AvaliacaoController(
+        AvaliacaoService service,
+        ConviteAvaliacaoService conviteService,
+        ILogger<AvaliacaoController> logger)
+    {
+        this.service = service;
+        this.conviteService = conviteService;
+        this.logger = logger;
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<AvaliacaoResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
     {
@@ -33,10 +46,24 @@ public class AvaliacaoController(
     }
 
     [HttpPost]
+    [Authorize(Roles = "Avaliador")]
     public async Task<ActionResult<AvaliacaoResponseDTO>> Create(
         [FromBody] AvaliacaoRequestDTO request,
         CancellationToken cancellationToken = default)
     {
+        logger.LogInformation("Avaliador tentando criar avaliação");
+
+        // Extrai o ID do usuário do token
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long avaliadorId))
+        {
+            logger.LogWarning("ID do avaliador não encontrado no token");
+            return Unauthorized(new { message = "Token inválido" });
+        }
+
         try
         {
             var avaliacao = await service.CreateAsync(request, cancellationToken);
@@ -45,6 +72,7 @@ public class AvaliacaoController(
         }
         catch (ArgumentException ex)
         {
+            logger.LogWarning(ex, "Erro ao criar avaliação para avaliador {AvaliadorId}", avaliadorId);
             return BadRequest(ex.Message);
         }
     }
@@ -58,13 +86,19 @@ public class AvaliacaoController(
     }
 
     [HttpGet("minhas-avaliacoes")]
+    [Authorize(Roles = "Avaliador")]
     public async Task<ActionResult<List<AvaliacaoResponseDTO>>> GetMinhasAvaliacoes(CancellationToken cancellationToken = default)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        logger.LogInformation("Avaliador tentando recuperar suas avaliações");
+
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
         
         if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out var userId))
         {
-            return Unauthorized("Token JWT inválido ou sem identificador de usuário.");
+            logger.LogWarning("ID do avaliador não encontrado no token");
+            return Unauthorized(new { message = "Token inválido" });
         }
 
         var avaliacoes = await service.FindByAvaliadorIdAsync(userId, cancellationToken);
@@ -73,13 +107,19 @@ public class AvaliacaoController(
     }
 
     [HttpGet("convites")]
+    [Authorize(Roles = "Avaliador")]
     public async Task<ActionResult<List<ConviteAvaliacaoResponseDTO>>> GetMeusConvites(CancellationToken cancellationToken = default)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        logger.LogInformation("Avaliador tentando recuperar seus convites");
+
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
         
         if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out var userId))
         {
-            return Unauthorized("Token JWT inválido ou sem identificador de usuário.");
+            logger.LogWarning("ID do avaliador não encontrado no token");
+            return Unauthorized(new { message = "Token inválido" });
         }
 
         var convites = await conviteService.FindByAvaliadorIdAsync(userId, cancellationToken);
@@ -88,51 +128,83 @@ public class AvaliacaoController(
     }
 
     [HttpPost("convites/{conviteId}/aceitar")]
+    [Authorize(Roles = "Avaliador")]
     public async Task<ActionResult<ConviteAvaliacaoResponseDTO>> AceitarConvite(long conviteId, CancellationToken cancellationToken = default)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        logger.LogInformation("Avaliador tentando aceitar convite {ConviteId}", conviteId);
+
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
         
         if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out var userId))
         {
-            return Unauthorized("Token JWT inválido ou sem identificador de usuário.");
+            logger.LogWarning("ID do avaliador não encontrado no token");
+            return Unauthorized(new { message = "Token inválido" });
         }
 
-        var convite = await conviteService.AceitarConviteAsync(conviteId, userId, cancellationToken);
-        
-        if (convite is null)
+        try
         {
-            return BadRequest("Convite não encontrado ou já foi respondido.");
+            var convite = await conviteService.AceitarConviteAsync(conviteId, userId, cancellationToken);
+
+            if (convite is null)
+            {
+                logger.LogWarning("Convite {ConviteId} não encontrado ou já foi respondido", conviteId);
+                return BadRequest("Convite não encontrado ou já foi respondido.");
+            }
+
+            return Ok(ConviteAvaliacaoResponseDTO.ValueOf(convite));
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Erro ao aceitar convite {ConviteId} para avaliador {AvaliadorId}", conviteId, userId);
+            return BadRequest(ex.Message);
         }
 
-        return Ok(ConviteAvaliacaoResponseDTO.ValueOf(convite));
-    }
+        }
 
     [HttpPost("convites/{conviteId}/recusar")]
+    [Authorize(Roles = "Avaliador")]
     public async Task<ActionResult<ConviteAvaliacaoResponseDTO>> RecusarConvite(
         long conviteId,
         [FromBody] RecusarConviteRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        logger.LogInformation("Avaliador tentando recusar convite {ConviteId}", conviteId);
+
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
         
         if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out var userId))
         {
-            return Unauthorized("Token JWT inválido ou sem identificador de usuário.");
+            logger.LogWarning("ID do avaliador não encontrado no token");
+            return Unauthorized(new { message = "Token inválido" });
         }
 
         if (string.IsNullOrWhiteSpace(request.MotivoRecusa))
         {
+            logger.LogWarning("Motivo da recusa não fornecido para convite {ConviteId}", conviteId);
             return BadRequest("Motivo da recusa é obrigatório.");
         }
 
-        var convite = await conviteService.RecusarConviteAsync(conviteId, userId, request.MotivoRecusa, cancellationToken);
-        
-        if (convite is null)
+        try
         {
-            return BadRequest("Convite não encontrado ou já foi respondido.");
-        }
+            var convite = await conviteService.RecusarConviteAsync(conviteId, userId, request.MotivoRecusa, cancellationToken);
+            
+            if (convite is null)
+            {
+                logger.LogWarning("Convite {ConviteId} não encontrado ou já foi respondido", conviteId);
+                return BadRequest("Convite não encontrado ou já foi respondido.");
+            }
 
-        return Ok(ConviteAvaliacaoResponseDTO.ValueOf(convite));
+            return Ok(ConviteAvaliacaoResponseDTO.ValueOf(convite));
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Erro ao recusar convite {ConviteId} para avaliador {AvaliadorId}", conviteId, userId);
+            return BadRequest(ex.Message);
+        }
     }
 }
 
