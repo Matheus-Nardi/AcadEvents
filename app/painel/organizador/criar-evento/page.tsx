@@ -59,7 +59,7 @@ export default function CriarEventoPage() {
       } as EventoRequest);
 
       toast.success("Evento criado com sucesso!");
-      router.push("/painel");
+      router.push("/painel-organizador");
     } catch (error: any) {
       const errorMessage = 
         error?.response?.data?.message || 
