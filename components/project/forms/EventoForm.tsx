@@ -10,7 +10,14 @@ import {
   Globe, 
   Image as ImageIcon, 
   FileText,
+  ListTree,
+  Layers,
 } from "lucide-react";
+import { trilhaService } from "@/lib/services/trilha/TrilhaService";
+import { trilhaTematicaService } from "@/lib/services/trilha-tematica/TrilhaTematicaService";
+import { Trilha } from "@/types/trilha/Trilha";
+import { TrilhaTematica } from "@/types/trilha-tematica/TrilhaTematica";
+import { EventoRequest } from "@/types/evento/EventoRequest";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -62,6 +69,12 @@ const eventoSchema = z.object({
   statusEvento: z
     .string()
     .min(1, "Status do evento é obrigatório"),
+  trilhaId: z
+    .string()
+    .min(1, "Trilha é obrigatória"),
+  trilhaTematicaId: z
+    .string()
+    .min(1, "Trilha temática é obrigatória"),
 }).refine(
   (data) => {
     const dataInicio = new Date(data.dataInicio);
@@ -77,7 +90,7 @@ const eventoSchema = z.object({
 type EventoFormValues = z.infer<typeof eventoSchema>;
 
 interface EventoFormProps {
-  onNext: (data: EventoFormValues) => void;
+  onNext: (data: Partial<EventoRequest>) => void;
   initialData?: Partial<EventoFormValues>;
   disabled?: boolean;
 }
@@ -96,6 +109,11 @@ export default function EventoForm({
   initialData,
   disabled = false
 }: EventoFormProps) {
+  const [trilhas, setTrilhas] = React.useState<Trilha[]>([]);
+  const [trilhasTematicas, setTrilhasTematicas] = React.useState<TrilhaTematica[]>([]);
+  const [isLoadingTrilhas, setIsLoadingTrilhas] = React.useState(false);
+  const [isLoadingTematicas, setIsLoadingTematicas] = React.useState(false);
+
   const form = useForm<EventoFormValues>({
     resolver: zodResolver(eventoSchema),
     defaultValues: {
@@ -107,11 +125,76 @@ export default function EventoForm({
       site: initialData?.site || "",
       logo: initialData?.logo || "",
       statusEvento: initialData?.statusEvento || "",
+      trilhaId: (() => {
+        const id: string | number | undefined = initialData?.trilhaId as any;
+        if (typeof id === 'string') return id;
+        if (typeof id === 'number') return id.toString();
+        return "";
+      })(),
+      trilhaTematicaId: (() => {
+        const id: string | number | undefined = initialData?.trilhaTematicaId as any;
+        if (typeof id === 'string') return id;
+        if (typeof id === 'number') return id.toString();
+        return "";
+      })(),
     },
   });
 
+  const selectedTrilhaId = form.watch("trilhaId");
+
+  // Carrega todas as trilhas ao montar o componente
+  React.useEffect(() => {
+    const loadTrilhas = async () => {
+      try {
+        setIsLoadingTrilhas(true);
+        const trilhasData = await trilhaService.getAll();
+        setTrilhas(trilhasData);
+      } catch (error) {
+        console.error("Erro ao carregar trilhas:", error);
+      } finally {
+        setIsLoadingTrilhas(false);
+      }
+    };
+
+    loadTrilhas();
+  }, []);
+
+  // Carrega trilhas temáticas quando uma trilha é selecionada
+  React.useEffect(() => {
+    const loadTrilhasTematicas = async () => {
+      if (!selectedTrilhaId || selectedTrilhaId === "") {
+        setTrilhasTematicas([]);
+        form.setValue("trilhaTematicaId", "");
+        return;
+      }
+
+      try {
+        setIsLoadingTematicas(true);
+        const tematicasData = await trilhaService.getByTrilhaId(parseInt(selectedTrilhaId));
+        setTrilhasTematicas(tematicasData);
+        // Limpa a seleção de trilha temática quando a trilha muda
+        form.setValue("trilhaTematicaId", "");
+      } catch (error) {
+        console.error("Erro ao carregar trilhas temáticas:", error);
+        setTrilhasTematicas([]);
+      } finally {
+        setIsLoadingTematicas(false);
+      }
+    };
+
+    loadTrilhasTematicas();
+  }, [selectedTrilhaId, form]);
+
   const onSubmit = (values: EventoFormValues) => {
-    onNext(values);
+    // Converte trilhaId e trilhaTematicaId de string para number (obrigatórios)
+    const trilhaId = parseInt(values.trilhaId);
+    const trilhaTematicaId = parseInt(values.trilhaTematicaId);
+
+    onNext({
+      ...values,
+      trilhaId,
+      trilhaTematicaId,
+    } as Partial<EventoRequest>);
   };
 
   return (
@@ -305,6 +388,82 @@ export default function EventoForm({
             </FormItem>
           )}
         />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="trilhaId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trilha</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  disabled={disabled || isLoadingTrilhas}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma trilha" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {trilhas.map((trilha) => (
+                      <SelectItem key={trilha.id} value={trilha.id.toString()}>
+                        {trilha.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Selecione uma trilha para associar ao evento
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="trilhaTematicaId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trilha Temática</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  disabled={disabled || isLoadingTematicas || !selectedTrilhaId || selectedTrilhaId === ""}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue 
+                        placeholder={
+                          !selectedTrilhaId || selectedTrilhaId === ""
+                            ? "Selecione primeiro uma trilha"
+                            : trilhasTematicas.length === 0
+                            ? "Nenhuma trilha temática disponível"
+                            : "Selecione uma trilha temática"
+                        } 
+                      />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {trilhasTematicas.map((tematica) => (
+                      <SelectItem key={tematica.id} value={tematica.id.toString()}>
+                        {tematica.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  {!selectedTrilhaId || selectedTrilhaId === ""
+                    ? "Selecione uma trilha primeiro para ver as trilhas temáticas"
+                    : "Selecione uma trilha temática da trilha escolhida"}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <Button 
           type="submit" 

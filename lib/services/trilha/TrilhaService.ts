@@ -2,6 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Trilha } from '@/types/trilha/Trilha';
 import { TrilhaRequest } from '@/types/trilha/TrilhaRequest';
+import { TrilhaTematica } from '@/types/trilha-tematica/TrilhaTematica';
 
 class TrilhaService {
   private getApiUrl(): string {
@@ -61,10 +62,10 @@ class TrilhaService {
     }
   }
 
-  async createForEvento(eventoId: number, request: TrilhaRequest): Promise<Trilha> {
+  async create(request: TrilhaRequest): Promise<Trilha> {
     try {
       const response = await axios.post(
-        `${this.getApiUrl()}/trilha/evento/${eventoId}`,
+        `${this.getApiUrl()}/trilha`,
         request,
         {
           headers: this.getAuthHeaders()
@@ -72,7 +73,23 @@ class TrilhaService {
       );
       return response.data;
     } catch (error) {
-      console.error(`Erro ao criar trilha para evento ${eventoId}:`, error);
+      console.error("Erro ao criar trilha:", error);
+      throw error;
+    }
+  }
+
+  async associateToEvento(trilhaId: number, eventoId: number): Promise<Trilha> {
+    try {
+      const response = await axios.post(
+        `${this.getApiUrl()}/trilha/${trilhaId}/evento/${eventoId}`,
+        {},
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Erro ao associar trilha ${trilhaId} ao evento ${eventoId}:`, error);
       throw error;
     }
   }
@@ -102,6 +119,23 @@ class TrilhaService {
       );
     } catch (error) {
       console.error(`Erro ao deletar trilha com ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async getByTrilhaId(trilhaId: number): Promise<TrilhaTematica[]> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/trilha/${trilhaId}/tematicas`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Erro ao buscar trilhas temáticas da trilha ${trilhaId}:`, error);
       throw error;
     }
   }

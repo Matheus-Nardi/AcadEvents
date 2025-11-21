@@ -30,7 +30,7 @@ class TrilhaTematicaService {
   async getAll(): Promise<TrilhaTematica[]> {
     try {
       const response = await axios.get(
-        `${this.getApiUrl()}/trilha-tematica`,
+        `${this.getApiUrl()}/trilhatematica`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ class TrilhaTematicaService {
   async getById(id: number): Promise<TrilhaTematica> {
     try {
       const response = await axios.get(
-        `${this.getApiUrl()}/trilha-tematica/${id}`,
+        `${this.getApiUrl()}/trilhatematica/${id}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -61,20 +61,10 @@ class TrilhaTematicaService {
     }
   }
 
-  async getByTrilhaId(trilhaId: number): Promise<TrilhaTematica[]> {
-    try {
-      const allTrilhasTematicas = await this.getAll();
-      return allTrilhasTematicas.filter(tt => tt.trilhaId === trilhaId);
-    } catch (error) {
-      console.error(`Erro ao buscar trilhas temáticas da trilha ${trilhaId}:`, error);
-      throw error;
-    }
-  }
-
-  async createForTrilha(trilhaId: number, request: TrilhaTematicaRequest): Promise<TrilhaTematica> {
+  async create(request: TrilhaTematicaRequest): Promise<TrilhaTematica> {
     try {
       const response = await axios.post(
-        `${this.getApiUrl()}/trilha-tematica/trilha/${trilhaId}`,
+        `${this.getApiUrl()}/trilhatematica`,
         request,
         {
           headers: this.getAuthHeaders()
@@ -82,7 +72,23 @@ class TrilhaTematicaService {
       );
       return response.data;
     } catch (error) {
-      console.error(`Erro ao criar trilha temática para trilha ${trilhaId}:`, error);
+      console.error("Erro ao criar trilha temática:", error);
+      throw error;
+    }
+  }
+
+  async associateToTrilha(trilhaTematicaId: number, trilhaId: number): Promise<TrilhaTematica> {
+    try {
+      const response = await axios.post(
+        `${this.getApiUrl()}/trilhatematica/${trilhaTematicaId}/trilha/${trilhaId}`,
+        {},
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Erro ao associar trilha temática ${trilhaTematicaId} à trilha ${trilhaId}:`, error);
       throw error;
     }
   }
@@ -90,7 +96,7 @@ class TrilhaTematicaService {
   async update(id: number, request: TrilhaTematicaRequest): Promise<void> {
     try {
       await axios.put(
-        `${this.getApiUrl()}/trilha-tematica/${id}`,
+        `${this.getApiUrl()}/trilhatematica/${id}`,
         request,
         {
           headers: this.getAuthHeaders()
@@ -105,7 +111,7 @@ class TrilhaTematicaService {
   async delete(id: number): Promise<void> {
     try {
       await axios.delete(
-        `${this.getApiUrl()}/trilha-tematica/${id}`,
+        `${this.getApiUrl()}/trilhatematica/${id}`,
         {
           headers: this.getAuthHeaders()
         }

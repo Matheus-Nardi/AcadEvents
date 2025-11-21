@@ -4,7 +4,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { FileText, User, Hash, Loader2 } from "lucide-react";
+import { FileText, User, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -40,20 +40,16 @@ const trilhaSchema = z.object({
 type TrilhaFormValues = z.infer<typeof trilhaSchema>;
 
 interface TrilhaFormProps {
-  onSubmit: (data: TrilhaFormValues) => Promise<void>;
-  onCancel?: () => void;
+  onNext: (data: TrilhaFormValues) => void;
   initialData?: Partial<TrilhaFormValues>;
   disabled?: boolean;
 }
 
 export default function TrilhaForm({
-  onSubmit,
-  onCancel,
+  onNext,
   initialData,
   disabled = false,
 }: TrilhaFormProps) {
-  const [isLoading, setIsLoading] = React.useState(false);
-
   const form = useForm<TrilhaFormValues>({
     resolver: zodResolver(trilhaSchema),
     defaultValues: {
@@ -64,21 +60,13 @@ export default function TrilhaForm({
     },
   });
 
-  const handleSubmit = async (values: TrilhaFormValues) => {
-    try {
-      setIsLoading(true);
-      await onSubmit(values);
-      form.reset();
-    } catch (error) {
-      // Erro já tratado no componente pai
-    } finally {
-      setIsLoading(false);
-    }
+  const onSubmit = (values: TrilhaFormValues) => {
+    onNext(values);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="nome"
@@ -91,7 +79,7 @@ export default function TrilhaForm({
                   <Input
                     placeholder="Ex: Computação e Tecnologia"
                     className="pl-9"
-                    disabled={isLoading || disabled}
+                    disabled={disabled}
                     {...field}
                   />
                 </div>
@@ -111,7 +99,7 @@ export default function TrilhaForm({
                 <Textarea
                   placeholder="Descreva a trilha, seus objetivos e áreas de interesse..."
                   className="min-h-[100px]"
-                  disabled={isLoading || disabled}
+                    disabled={disabled}
                   {...field}
                 />
               </FormControl>
@@ -136,7 +124,7 @@ export default function TrilhaForm({
                     <Input
                       placeholder="Nome do coordenador"
                       className="pl-9"
-                      disabled={isLoading || disabled}
+                      disabled={disabled}
                       {...field}
                     />
                   </div>
@@ -160,7 +148,7 @@ export default function TrilhaForm({
                       min="1"
                       placeholder="1"
                       className="pl-9"
-                      disabled={isLoading || disabled}
+                      disabled={disabled}
                       {...field}
                       onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                       value={field.value}
@@ -176,33 +164,13 @@ export default function TrilhaForm({
           />
         </div>
 
-        <div className="flex gap-4">
-          {onCancel && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              className="flex-1"
-              disabled={isLoading || disabled}
-            >
-              Cancelar
-            </Button>
-          )}
-          <Button
-            type="submit"
-            className={onCancel ? "flex-1" : "w-full"}
-            disabled={isLoading || disabled}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              "Salvar Trilha"
-            )}
-          </Button>
-        </div>
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={disabled}
+        >
+          Próximo: Trilhas Temáticas
+        </Button>
       </form>
     </Form>
   );

@@ -51,11 +51,21 @@ export default function CriarEventoPage() {
         return;
       }
 
+      // Converte trilhaId e trilhaTematicaId de string para number (obrigatórios)
+      const trilhaId = typeof eventoData.trilhaId === 'string' 
+        ? parseInt(eventoData.trilhaId) 
+        : eventoData.trilhaId!;
+      const trilhaTematicaId = typeof eventoData.trilhaTematicaId === 'string'
+        ? parseInt(eventoData.trilhaTematicaId)
+        : eventoData.trilhaTematicaId!;
+
       await eventoService.create(user.id, {
         ...eventoData,
         configuracaoEventoId: configuracao.id,
         site: eventoData.site || "",
         logo: eventoData.logo || "",
+        trilhaId: trilhaId,
+        trilhaTematicaId: trilhaTematicaId,
       } as EventoRequest);
 
       toast.success("Evento criado com sucesso!");
@@ -123,7 +133,15 @@ export default function CriarEventoPage() {
               <h2 className="text-xl font-semibold mb-6">Informações Básicas do Evento</h2>
               <EventoForm 
                 onNext={handleEventoNext}
-                initialData={eventoData || undefined}
+                initialData={
+                  eventoData 
+                    ? {
+                        ...eventoData,
+                        trilhaId: eventoData.trilhaId?.toString() || "",
+                        trilhaTematicaId: eventoData.trilhaTematicaId?.toString() || "",
+                      }
+                    : undefined
+                }
               />
             </div>
           ) : (
