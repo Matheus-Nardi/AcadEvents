@@ -41,13 +41,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
+        // Verifica se há token antes de tentar buscar o perfil
+        const token = Cookies.get('auth_token');
+        if (!token) {
+          // Sem token, usuário não está autenticado (rotas públicas são permitidas)
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        // Tenta buscar o perfil do usuário
         const userLogged = await authService.profile();
         setUser(userLogged);
       } catch (error) {
-        console.log("Sessão não encontrada ou token inválido, deslogando.");
+        // Erro ao buscar perfil (token inválido ou expirado)
+        console.log("Sessão não encontrada ou token inválido.");
         setUser(null); 
-        await authService.logout(); 
-        router.push('/login');
+        await authService.logout();
+        // Não redireciona automaticamente - permite acesso a rotas públicas
       } finally {
         setLoading(false);
       }

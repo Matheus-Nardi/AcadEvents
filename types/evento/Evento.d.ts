@@ -1,3 +1,8 @@
+import { ConfiguracaoEvento } from "@/types/configuracao-evento/ConfiguracaoEvento";
+import { Organizador } from "@/types/auth/Organizador";
+import { Trilha } from "@/types/trilha/Trilha";
+import { ComiteCientifico } from "@/types/comite-cientifico/ComiteCientifico";
+
 export interface Evento {
   id: number;
   nome: string;
@@ -8,7 +13,9 @@ export interface Evento {
   site: string;
   logo: string;
   statusEvento: string;
-  configuracaoEventoId: number;
-  organizadoresIds: number[];
+  configuracao?: ConfiguracaoEvento;
+  organizadores?: Organizador[];
+  trilhas?: Trilha[];
+  comites?: ComiteCientifico[];
 }
 
