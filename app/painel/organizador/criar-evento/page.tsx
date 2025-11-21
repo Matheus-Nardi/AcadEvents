@@ -7,14 +7,18 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import EventoForm from "@/components/project/forms/EventoForm";
 import ConfiguracaoEventoForm from "@/components/project/forms/ConfiguracaoEventoForm";
+import ComiteCientificoForm from "@/components/project/forms/ComiteCientificoForm";
 import { eventoService } from "@/lib/services/evento/EventoService";
 import { configuracaoEventoService } from "@/lib/services/configuracao-evento/ConfiguracaoEventoService";
+import { trilhaService } from "@/lib/services/trilha/TrilhaService";
+import { comiteCientificoService } from "@/lib/services/comite-cientifico/ComiteCientificoService";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { EventoRequest } from "@/types/evento/EventoRequest";
 import { ConfiguracaoEventoRequest } from "@/types/configuracao-evento/ConfiguracaoEventoRequest";
+import { ComiteCientificoRequest } from "@/types/comite-cientifico/ComiteCientificoRequest";
 
-type Step = 1 | 2;
+type Step = 1 | 2 | 3;
 
 export default function CriarEventoPage() {
   const router = useRouter();
@@ -22,8 +26,9 @@ export default function CriarEventoPage() {
   const [step, setStep] = React.useState<Step>(1);
   const [eventoData, setEventoData] = React.useState<Partial<EventoRequest> | null>(null);
   const [configuracaoId, setConfiguracaoId] = React.useState<number | null>(null);
+  const [eventoId, setEventoId] = React.useState<number | null>(null);
 
-  const progress = step === 1 ? 50 : 100;
+  const progress = step === 1 ? 33 : step === 2 ? 66 : 100;
 
   const handleEventoNext = (data: Partial<EventoRequest>) => {
     setEventoData(data);
@@ -36,11 +41,6 @@ export default function CriarEventoPage() {
 
   const handleConfiguracaoSubmit = async (configData: ConfiguracaoEventoRequest) => {
     try {
-      if (!user?.id) {
-        toast.error("Usuário não autenticado");
-        return;
-      }
-
       // Primeiro, cria a configuração
       const configuracao = await configuracaoEventoService.create(configData);
       setConfiguracaoId(configuracao.id);
@@ -59,7 +59,8 @@ export default function CriarEventoPage() {
         ? parseInt(eventoData.trilhaTematicaId)
         : eventoData.trilhaTematicaId!;
 
-      await eventoService.create(user.id, {
+      // Cria o evento (organizadorId é extraído do token JWT)
+      const evento = await eventoService.create({
         ...eventoData,
         configuracaoEventoId: configuracao.id,
         site: eventoData.site || "",
@@ -68,8 +69,12 @@ export default function CriarEventoPage() {
         trilhaTematicaId: trilhaTematicaId,
       } as EventoRequest);
 
-      toast.success("Evento criado com sucesso!");
-      router.push("/painel-organizador");
+      // Associa a trilha ao evento
+      await trilhaService.associateToEvento(trilhaId, evento.id);
+
+      setEventoId(evento.id);
+      toast.success("Evento criado com sucesso! Agora configure o comitê científico.");
+      setStep(3);
     } catch (error: any) {
       const errorMessage = 
         error?.response?.data?.message || 
@@ -78,6 +83,31 @@ export default function CriarEventoPage() {
       throw error;
     }
   };
+
+  const handleComiteBack = () => {
+    setStep(2);
+  };
+
+  const handleComiteSubmit = async (comiteData: ComiteCientificoRequest) => {
+    try {
+      if (!eventoId) {
+        toast.error("ID do evento não encontrado");
+        return;
+      }
+
+      // Cria o comitê científico (organizadorId é extraído do token JWT)
+      await comiteCientificoService.create(eventoId, comiteData);
+
+      toast.success("Comitê científico criado com sucesso!");
+      router.push("/painel/organizador");
+    } catch (error: any) {
+      const errorMessage = 
+        error?.response?.data?.message || 
+        "Erro ao criar comitê científico. Tente novamente.";
+      toast.error(errorMessage);
+      throw error;
+    }
+  };  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-12 px-4 sm:px-6 lg:px-8">
@@ -116,10 +146,27 @@ export default function CriarEventoPage() {
               <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
                 step >= 2 ? "bg-primary text-primary-foreground border-primary" : "border-muted"
               }`}>
-                <span className="text-sm font-medium">2</span>
+                {step > 2 ? (
+                  <CheckCircle2 className="h-5 w-5" />
+                ) : (
+                  <span className="text-sm font-medium">2</span>
+                )}
               </div>
               <span className={`text-sm font-medium ${step >= 2 ? "text-foreground" : "text-muted-foreground"}`}>
                 Configuração
+              </span>
+            </div>
+
+            <ArrowRight className="h-5 w-5 text-muted-foreground" />
+
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                step >= 3 ? "bg-primary text-primary-foreground border-primary" : "border-muted"
+              }`}>
+                <span className="text-sm font-medium">3</span>
+              </div>
+              <span className={`text-sm font-medium ${step >= 3 ? "text-foreground" : "text-muted-foreground"}`}>
+                Comitê Científico
               </span>
             </div>
           </div>
@@ -144,12 +191,20 @@ export default function CriarEventoPage() {
                 }
               />
             </div>
-          ) : (
+          ) : step === 2 ? (
             <div>
               <h2 className="text-xl font-semibold mb-6">Configuração do Evento</h2>
               <ConfiguracaoEventoForm
                 onBack={handleConfiguracaoBack}
                 onSubmit={handleConfiguracaoSubmit}
+              />
+            </div>
+          ) : (
+            <div>
+              <h2 className="text-xl font-semibold mb-6">Comitê Científico</h2>
+              <ComiteCientificoForm
+                onBack={handleComiteBack}
+                onSubmit={handleComiteSubmit}
               />
             </div>
           )}

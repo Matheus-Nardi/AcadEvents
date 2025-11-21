@@ -76,10 +76,10 @@ class EventoService {
     }
   }
 
-  async create(organizadorId: number, eventoRequest: EventoRequest): Promise<Evento> {
+  async create(eventoRequest: EventoRequest): Promise<Evento> {
     try {
       const response = await axios.post(
-        `${this.getApiUrl()}/evento/organizador/${organizadorId}`,
+        `${this.getApiUrl()}/evento`,
         eventoRequest,
         {
           headers: this.getAuthHeaders()
