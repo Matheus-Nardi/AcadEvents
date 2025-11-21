@@ -80,7 +80,7 @@ class TrilhaService {
 
   async associateToEvento(trilhaId: number, eventoId: number): Promise<Trilha> {
     try {
-      const response = await axios.post(
+      const response = await axios.patch(
         `${this.getApiUrl()}/trilha/${trilhaId}/evento/${eventoId}`,
         {},
         {
