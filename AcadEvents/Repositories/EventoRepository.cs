@@ -28,6 +28,14 @@ public class EventoRepository : BaseRepository<Evento>
             .FirstOrDefaultAsync(e => e.ConfiguracaoEventoId == configuracaoEventoId, cancellationToken);
     }
 
+    public async Task<List<Evento>> FindByOrganizadorIdAsync(long organizadorId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Eventos
+            .Include(e => e.Organizadores)
+            .Where(e => e.Organizadores.Any(o => o.Id == organizadorId))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddOrganizadorAsync(long eventoId, long organizadorId, CancellationToken cancellationToken = default)
     {
         var evento = await FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);

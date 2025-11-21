@@ -25,6 +25,16 @@ public class EventoService
         return await _eventoRepository.FindAllWithOrganizadoresAsync(cancellationToken);
     }
 
+    public async Task<List<Evento>> GetByOrganizadorIdAsync(long organizadorId, CancellationToken cancellationToken = default)
+    {
+        // Verificar se o organizador existe
+        var organizador = await _organizadorRepository.FindByIdAsync(organizadorId, cancellationToken);
+        if (organizador == null)
+            throw new ArgumentException($"Organizador com Id {organizadorId} não encontrado.");
+
+        return await _eventoRepository.FindByOrganizadorIdAsync(organizadorId, cancellationToken);
+    }
+
     public async Task<Evento?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         return await _eventoRepository.FindByIdWithOrganizadoresAsync(id, cancellationToken);

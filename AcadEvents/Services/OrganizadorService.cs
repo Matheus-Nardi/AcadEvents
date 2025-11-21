@@ -1,20 +1,23 @@
 using AcadEvents.Dtos;
 using AcadEvents.Models;
 using AcadEvents.Repositories;
-
+using AcadEvents.Services;
 namespace AcadEvents.Services;
 
 public class OrganizadorService
 {
     private readonly OrganizadorRepository _organizadorRepository;
     private readonly PerfilORCIDRepository _perfilORCIDRepository;
+    private readonly HashService _hashService;
 
     public OrganizadorService(
         OrganizadorRepository organizadorRepository,
-        PerfilORCIDRepository perfilORCIDRepository)
+        PerfilORCIDRepository perfilORCIDRepository,
+        HashService hashService)
     {
         _organizadorRepository = organizadorRepository;
         _perfilORCIDRepository = perfilORCIDRepository;
+        _hashService = hashService;
     }
 
     public async Task<List<Organizador>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -41,7 +44,7 @@ public class OrganizadorService
         {
             Nome = request.Nome,
             Email = request.Email,
-            Senha = request.Senha,
+            Senha = _hashService.HashPassword(request.Senha),
             Instituicao = request.Instituicao,
             Pais = request.Pais,
             DataCadastro = DateTime.UtcNow,
