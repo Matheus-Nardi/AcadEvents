@@ -12,6 +12,12 @@ public class EventoRepository : BaseRepository<Evento>
     {
         return await _db.Eventos
             .Include(e => e.Organizadores)
+            .Include(e => e.Configuracao)
+            .Include(e => e.Trilhas)
+            .Include(e => e.Comites)
+                .ThenInclude(c => c.MembrosAvaliadores)
+            .Include(e => e.Comites)
+                .ThenInclude(c => c.Coordenadores)
             .ToListAsync(cancellationToken);
     }
 
@@ -19,6 +25,12 @@ public class EventoRepository : BaseRepository<Evento>
     {
         return await _db.Eventos
             .Include(e => e.Organizadores)
+            .Include(e => e.Configuracao)
+            .Include(e => e.Trilhas)
+            .Include(e => e.Comites)
+                .ThenInclude(c => c.MembrosAvaliadores)
+            .Include(e => e.Comites)
+                .ThenInclude(c => c.Coordenadores)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
@@ -32,6 +44,12 @@ public class EventoRepository : BaseRepository<Evento>
     {
         return await _db.Eventos
             .Include(e => e.Organizadores)
+            .Include(e => e.Configuracao)
+            .Include(e => e.Trilhas)
+            .Include(e => e.Comites)
+                .ThenInclude(c => c.MembrosAvaliadores)
+            .Include(e => e.Comites)
+                .ThenInclude(c => c.Coordenadores)
             .Where(e => e.Organizadores.Any(o => o.Id == organizadorId))
             .ToListAsync(cancellationToken);
     }

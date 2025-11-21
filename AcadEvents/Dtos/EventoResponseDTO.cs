@@ -13,8 +13,10 @@ public record EventoResponseDTO
     public string Site { get; init; }
     public string Logo { get; init; }
     public string StatusEvento { get; init; }
-    public long ConfiguracaoEventoId { get; init; }
-    public List<long> OrganizadoresIds { get; init; } = new();
+    public ConfiguracaoEventoResponseDTO? Configuracao { get; init; }
+    public List<OrganizadorResponseDTO> Organizadores { get; init; } = new();
+    public List<TrilhaResponseDTO> Trilhas { get; init; } = new();
+    public List<ComiteCientificoResponseDTO> Comites { get; init; } = new();
 
     public static EventoResponseDTO ValueOf(Evento evento)
     {
@@ -29,8 +31,10 @@ public record EventoResponseDTO
             Site = evento.Site,
             Logo = evento.Logo,
             StatusEvento = evento.StatusEvento,
-            ConfiguracaoEventoId = evento.ConfiguracaoEventoId,
-            OrganizadoresIds = evento.Organizadores?.Select(o => o.Id).ToList() ?? new List<long>()
+            Configuracao = evento.Configuracao != null ? ConfiguracaoEventoResponseDTO.ValueOf(evento.Configuracao) : null,
+            Organizadores = evento.Organizadores?.Select(o => OrganizadorResponseDTO.ValueOf(o)).ToList() ?? new List<OrganizadorResponseDTO>(),
+            Trilhas = evento.Trilhas?.Select(t => TrilhaResponseDTO.ValueOf(t)).ToList() ?? new List<TrilhaResponseDTO>(),
+            Comites = evento.Comites?.Select(c => ComiteCientificoResponseDTO.ValueOf(c)).ToList() ?? new List<ComiteCientificoResponseDTO>()
         };
     }
 }
