@@ -2,6 +2,13 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Submissao } from '@/types/submissao/Submissao';
 import { SubmissaoRequest } from '@/types/submissao/SubmissaoRequest';
+import { SubmissaoRequestApi } from '@/types/submissao/SubmissaoRequestApi';
+import { 
+  statusSubmissaoToCamelCase, 
+  formatoSubmissaoToCamelCase,
+  camelCaseToStatusSubmissao,
+  camelCaseToFormatoSubmissao
+} from '@/lib/utils/enumToCamelCase';
 
 class SubmissaoService {
   private getApiUrl(): string {
@@ -37,7 +44,12 @@ class SubmissaoService {
           }
         }
       );
-      return response.data;
+      // Converte os enums de camelCase para o formato do frontend
+      return response.data.map((submissao: any) => ({
+        ...submissao,
+        status: camelCaseToStatusSubmissao(submissao.status),
+        formato: camelCaseToFormatoSubmissao(submissao.formato),
+      }));
     } catch (error) {
       console.error("Erro ao buscar todas as submissões:", error);
       throw error;
@@ -54,7 +66,12 @@ class SubmissaoService {
           }
         }
       );
-      return response.data;
+      // Converte os enums de camelCase para o formato do frontend
+      return {
+        ...response.data,
+        status: camelCaseToStatusSubmissao(response.data.status),
+        formato: camelCaseToFormatoSubmissao(response.data.formato),
+      };
     } catch (error) {
       console.error(`Erro ao buscar submissão com ID ${id}:`, error);
       throw error;
@@ -63,14 +80,26 @@ class SubmissaoService {
 
   async create(request: SubmissaoRequest): Promise<Submissao> {
     try {
+      // Converte os enums para camelCase antes de enviar
+      const apiRequest: SubmissaoRequestApi = {
+        ...request,
+        status: statusSubmissaoToCamelCase(request.status),
+        formato: formatoSubmissaoToCamelCase(request.formato),
+      };
+      
       const response = await axios.post(
         `${this.getApiUrl()}/submissao`,
-        request,
+        apiRequest,
         {
           headers: this.getAuthHeaders()
         }
       );
-      return response.data;
+      // Converte os enums de camelCase para o formato do frontend
+      return {
+        ...response.data,
+        status: camelCaseToStatusSubmissao(response.data.status),
+        formato: camelCaseToFormatoSubmissao(response.data.formato),
+      };
     } catch (error) {
       console.error("Erro ao criar submissão:", error);
       throw error;
@@ -79,14 +108,26 @@ class SubmissaoService {
 
   async update(id: number, request: SubmissaoRequest): Promise<Submissao> {
     try {
+      // Converte os enums para camelCase antes de enviar
+      const apiRequest: SubmissaoRequestApi = {
+        ...request,
+        status: statusSubmissaoToCamelCase(request.status),
+        formato: formatoSubmissaoToCamelCase(request.formato),
+      };
+      
       const response = await axios.put(
         `${this.getApiUrl()}/submissao/${id}`,
-        request,
+        apiRequest,
         {
           headers: this.getAuthHeaders()
         }
       );
-      return response.data;
+      // Converte os enums de camelCase para o formato do frontend
+      return {
+        ...response.data,
+        status: camelCaseToStatusSubmissao(response.data.status),
+        formato: camelCaseToFormatoSubmissao(response.data.formato),
+      };
     } catch (error) {
       console.error(`Erro ao atualizar submissão com ID ${id}:`, error);
       throw error;

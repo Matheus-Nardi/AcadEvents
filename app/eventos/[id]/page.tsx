@@ -141,6 +141,10 @@ const isOrganizador = (user: any): boolean => {
   return user && 'cargo' in user && 'permissoes' in user;
 };
 
+const isAutor = (user: any): boolean => {
+  return user && 'biografia' in user && 'areaAtuacao' in user && 'lattes' in user;
+};
+
 export default function EventoDetailsPage() {
   const router = useRouter();
   const params = useParams();
@@ -447,19 +451,19 @@ export default function EventoDetailsPage() {
                                     </div>
                                   )}
                                 </CardHeader>
-                                <CardContent>
-                                  <Button
-                                    className="w-full"
-                                    onClick={() => {
-                                      // TODO: Navegar para página de submissão
-                                      toast.info("Funcionalidade de submissão em breve!");
-                                      // router.push(`/eventos/${eventoId}/submissao/${tematica.id}`);
-                                    }}
-                                  >
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    FAZER SUBMISSÃO
-                                  </Button>
-                                </CardContent>
+                                {isAutor(user) && (
+                                  <CardContent>
+                                    <Button
+                                      className="w-full"
+                                      onClick={() => {
+                                        router.push(`/eventos/${eventoId}/submissao/${tematica.id}`);
+                                      }}
+                                    >
+                                      <Upload className="mr-2 h-4 w-4" />
+                                      FAZER SUBMISSÃO
+                                    </Button>
+                                  </CardContent>
+                                )}
                               </Card>
                             ))}
                           </div>
