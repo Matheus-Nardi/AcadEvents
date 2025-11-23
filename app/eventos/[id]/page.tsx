@@ -411,11 +411,6 @@ export default function EventoDetailsPage() {
                             <span className="text-muted-foreground">Coordenador:</span>
                             <span className="font-medium">{trilha.coordenador}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Hash className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Limite de Submissões:</span>
-                            <span className="font-medium">{trilha.limiteSubmissoes}</span>
-                          </div>
                         </div>
 
                         {/* Trilhas Temáticas */}

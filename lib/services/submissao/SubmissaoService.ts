@@ -78,6 +78,28 @@ class SubmissaoService {
     }
   }
 
+  async getByTrilhaTematicaId(trilhaTematicaId: number): Promise<Submissao[]> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/submissao/trilha-tematica/${trilhaTematicaId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      // Converte os enums de camelCase para o formato do frontend
+      return response.data.map((submissao: any) => ({
+        ...submissao,
+        status: camelCaseToStatusSubmissao(submissao.status),
+        formato: camelCaseToFormatoSubmissao(submissao.formato),
+      }));
+    } catch (error) {
+      console.error(`Erro ao buscar submissões da trilha temática ${trilhaTematicaId}:`, error);
+      throw error;
+    }
+  }
+
   async create(request: SubmissaoRequest): Promise<Submissao> {
     try {
       // Converte os enums para camelCase antes de enviar
