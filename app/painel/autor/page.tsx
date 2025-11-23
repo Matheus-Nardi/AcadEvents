@@ -55,11 +55,6 @@ const formatDateShort = (dateString: string) => {
 
 const getStatusBadge = (status: StatusSubmissao) => {
   const statusConfig: Record<StatusSubmissao, { label: string; className: string; icon: React.ReactNode }> = {
-    [StatusSubmissao.RASCUNHO]: {
-      label: "Rascunho",
-      className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-      icon: <FileEdit className="h-3 w-3" />
-    },
     [StatusSubmissao.SUBMETIDA]: {
       label: "Submetida",
       className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -85,14 +80,13 @@ const getStatusBadge = (status: StatusSubmissao) => {
       className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
       icon: <XCircle className="h-3 w-3" />
     },
-    [StatusSubmissao.RETIRADA]: {
-      label: "Retirada",
-      className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-      icon: <FileX className="h-3 w-3" />
-    },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || {
+    label: status,
+    className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+    icon: <AlertCircle className="h-3 w-3" />
+  };
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${config.className}`}>
@@ -179,7 +173,6 @@ export default function AutorPage() {
     }
   };
 
-  const rascunhos = submissoes.filter(s => s.status === StatusSubmissao.RASCUNHO);
   const submetidas = submissoes.filter(s => s.status === StatusSubmissao.SUBMETIDA);
   const emAvaliacao = submissoes.filter(s => s.status === StatusSubmissao.EM_AVALIACAO);
   const aprovadas = submissoes.filter(s => 
@@ -279,27 +272,6 @@ export default function AutorPage() {
                       <Eye className="mr-2 h-4 w-4" />
                       Ver Detalhes
                     </Button>
-                    {submissao.status === StatusSubmissao.RASCUNHO && (
-                      <>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            // TODO: Navegar para página de edição
-                            toast.info("Funcionalidade em desenvolvimento");
-                          }}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={() => handleDelete(submissao.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Excluir
-                        </Button>
-                      </>
-                    )}
                   </CardFooter>
                 </Card>
               ))}
@@ -318,10 +290,6 @@ export default function AutorPage() {
                 <p className="text-xs text-muted-foreground mt-1">Total de Submissões</p>
               </div>
               <div className="pt-4 border-t space-y-3">
-                <div>
-                  <div className="text-xl font-semibold">{rascunhos.length}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Rascunhos</p>
-                </div>
                 <div>
                   <div className="text-xl font-semibold">{submetidas.length}</div>
                   <p className="text-xs text-muted-foreground mt-1">Submetidas</p>

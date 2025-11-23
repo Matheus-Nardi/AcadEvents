@@ -4,16 +4,14 @@ import React from "react"
 import { Upload, File, X, Loader2, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { arquivoSubmissaoService } from "@/lib/services/submissao/ArquivoSubmissaoService"
-import { ArquivoSubmissao } from "@/types/submissao/ArquivoSubmissao"
 import { toast } from "sonner"
 
 interface EtapaUploadArquivoProps {
-  submissaoId: number
-  arquivos: ArquivoSubmissao[]
-  onArquivosChange: (arquivos: ArquivoSubmissao[]) => void
+  arquivo: File | null
+  onArquivoChange: (arquivo: File | null) => void
   onBack: () => void
-  onComplete: () => void
+  onComplete: (arquivo: File) => void
+  isLoading?: boolean
 }
 
 // Tipos de arquivo permitidos para submissões científicas
@@ -26,33 +24,13 @@ const TIPOS_PERMITIDOS = [
 const EXTENSOES_PERMITIDAS = [".pdf", ".doc", ".docx"]
 
 export function EtapaUploadArquivo({
-  submissaoId,
-  arquivos,
-  onArquivosChange,
+  arquivo,
+  onArquivoChange,
   onBack,
   onComplete,
+  isLoading = false,
 }: EtapaUploadArquivoProps) {
-  const [isUploading, setIsUploading] = React.useState(false)
-  const [isLoadingArquivos, setIsLoadingArquivos] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
-
-  React.useEffect(() => {
-    const loadArquivos = async () => {
-      try {
-        setIsLoadingArquivos(true)
-        const arquivosList = await arquivoSubmissaoService.listarPorSubmissao(submissaoId)
-        onArquivosChange(arquivosList)
-      } catch (error) {
-        console.error("Erro ao carregar arquivos:", error)
-      } finally {
-        setIsLoadingArquivos(false)
-      }
-    }
-
-    if (submissaoId) {
-      loadArquivos()
-    }
-  }, [submissaoId, onArquivosChange])
 
   const validateFile = (file: File): boolean => {
     // Verifica tipo MIME
@@ -77,7 +55,7 @@ export function EtapaUploadArquivo({
     return true
   }
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -89,22 +67,12 @@ export function EtapaUploadArquivo({
       return
     }
 
-    try {
-      setIsUploading(true)
-      const novoArquivo = await arquivoSubmissaoService.upload(submissaoId, file)
-      onArquivosChange([...arquivos, novoArquivo])
-      toast.success("Arquivo enviado com sucesso!")
-      
-      // Limpa o input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.message || "Erro ao fazer upload do arquivo."
-      toast.error(errorMessage)
-    } finally {
-      setIsUploading(false)
+    onArquivoChange(file)
+    toast.success("Arquivo selecionado!")
+    
+    // Limpa o input para permitir selecionar o mesmo arquivo novamente
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
     }
   }
 
@@ -144,7 +112,7 @@ export function EtapaUploadArquivo({
                 type="file"
                 accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 onChange={handleFileSelect}
-                disabled={isUploading}
+                disabled={isLoading}
                 className="hidden"
                 id="file-upload"
               />
@@ -152,22 +120,13 @@ export function EtapaUploadArquivo({
                 htmlFor="file-upload"
                 className="flex flex-col items-center cursor-pointer"
               >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-                    <p className="text-sm font-medium">Enviando arquivo...</p>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-sm font-medium mb-1">
-                      Clique para selecionar ou arraste o arquivo aqui
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      PDF, DOC ou DOCX (máximo 10MB)
-                    </p>
-                  </>
-                )}
+                <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-sm font-medium mb-1">
+                  Clique para selecionar ou arraste o arquivo aqui
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  PDF, DOC ou DOCX (máximo 10MB)
+                </p>
               </label>
             </div>
           </CardContent>
@@ -177,72 +136,70 @@ export function EtapaUploadArquivo({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">
-            Arquivos Enviados ({arquivos.length})
+            Arquivo Selecionado
           </h3>
         </div>
 
-        {isLoadingArquivos ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : arquivos.length === 0 ? (
+        {!arquivo ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-8">
               <File className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-sm text-muted-foreground text-center">
-                Nenhum arquivo enviado ainda.
+                Nenhum arquivo selecionado ainda.
                 <br />
-                Use o campo acima para fazer upload do arquivo.
+                Use o campo acima para selecionar o arquivo. (Obrigatório)
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {arquivos.map((arquivo) => (
-              <Card key={arquivo.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <File className="h-5 w-5 text-muted-foreground" />
-                        <CardTitle className="text-base">{arquivo.nomeArquivo}</CardTitle>
-                        {arquivo.versao > 1 && (
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                            Versão {arquivo.versao}
-                          </span>
-                        )}
-                      </div>
-                      <CardDescription className="space-y-1">
-                        <p>
-                          <span className="font-medium">Tamanho:</span> {formatFileSize(arquivo.tamanho)}
-                        </p>
-                        <p>
-                          <span className="font-medium">Tipo:</span> {arquivo.tipo}
-                        </p>
-                        <p>
-                          <span className="font-medium">Enviado em:</span> {formatDate(arquivo.dataUpload)}
-                        </p>
-                      </CardDescription>
-                    </div>
-                    <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-1" />
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <CardContent className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-3 flex-1">
+                <File className="h-8 w-8 text-primary" />
+                <div className="flex-1">
+                  <p className="font-medium">{arquivo.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatFileSize(arquivo.size)} • {arquivo.type || "Tipo não identificado"}
+                  </p>
+                </div>
+                <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  onArquivoChange(null)
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = ""
+                  }
+                }}
+                disabled={isLoading}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
 
       <div className="flex justify-between pt-4">
-        <Button type="button" variant="outline" onClick={onBack}>
+        <Button type="button" variant="outline" onClick={onBack} disabled={isLoading}>
           Voltar
         </Button>
         <Button
           type="button"
-          onClick={onComplete}
-          disabled={arquivos.length === 0}
+          onClick={() => arquivo && onComplete(arquivo)}
+          disabled={!arquivo || isLoading}
         >
-          Finalizar Submissão
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Finalizando...
+            </>
+          ) : (
+            "Finalizar Submissão"
+          )}
         </Button>
       </div>
     </div>

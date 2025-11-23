@@ -9,7 +9,7 @@ export interface SubmissaoRequestApi {
   dataSubmissao: string;
   dataUltimaModificacao: string;
   versao: number;
-  status: string; // Enum como string em camelCase (ex: "rascunho", "emAvaliacao")
+  status: string; // Enum como string em formato original (ex: "SUBMETIDA", "EM_AVALIACAO")
   formato: string; // Enum como string em camelCase (ex: "artigoCompleto", "workshop")
   eventoId: number;
   trilhaTematicaId: number;

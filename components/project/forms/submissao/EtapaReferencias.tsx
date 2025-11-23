@@ -1,88 +1,56 @@
 "use client"
 
 import React from "react"
-import { Search, Plus, X, Loader2, FileText } from "lucide-react"
+import { X, Loader2, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Referencia } from "@/types/referencia/Referencia"
-import { referenciaService } from "@/lib/services/referencia/ReferenciaService"
 import { toast } from "sonner"
 
 interface EtapaReferenciasProps {
-  submissaoId: number
-  referencias: Referencia[]
-  onReferenciasChange: (referencias: Referencia[]) => void
-  onNext: () => void
+  dois: string[]
+  onDoisChange: (dois: string[]) => void
+  onNext: (dois: string[]) => void
   onBack: () => void
 }
 
 export function EtapaReferencias({
-  submissaoId,
-  referencias,
-  onReferenciasChange,
+  dois,
+  onDoisChange,
   onNext,
   onBack,
 }: EtapaReferenciasProps) {
   const [doiInput, setDoiInput] = React.useState("")
-  const [isSearching, setIsSearching] = React.useState(false)
-  const [isLoadingReferencias, setIsLoadingReferencias] = React.useState(false)
 
-  React.useEffect(() => {
-    const loadReferencias = async () => {
-      try {
-        setIsLoadingReferencias(true)
-        const refs = await referenciaService.getBySubmissao(submissaoId)
-        onReferenciasChange(refs)
-      } catch (error) {
-        console.error("Erro ao carregar referências:", error)
-      } finally {
-        setIsLoadingReferencias(false)
-      }
-    }
-
-    if (submissaoId) {
-      loadReferencias()
-    }
-  }, [submissaoId, onReferenciasChange])
-
-  const handleAddReferencia = async () => {
+  const handleAddDoi = () => {
     if (!doiInput.trim()) {
       toast.error("Por favor, informe um DOI")
       return
     }
 
-    try {
-      setIsSearching(true)
-      const novaReferencia = await referenciaService.createFromDoi(
-        submissaoId,
-        doiInput.trim()
-      )
-      
-      onReferenciasChange([...referencias, novaReferencia])
-      setDoiInput("")
-      toast.success("Referência adicionada com sucesso!")
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        "Erro ao buscar referência. Verifique se o DOI está correto."
-      toast.error(errorMessage)
-    } finally {
-      setIsSearching(false)
+    // Normaliza o DOI (remove https://doi.org/ se presente)
+    const doiNormalizado = doiInput.trim().replace(/^https?:\/\/doi\.org\//i, "")
+    
+    // Verifica se já existe
+    if (dois.includes(doiNormalizado)) {
+      toast.error("Este DOI já foi adicionado")
+      return
     }
+
+    onDoisChange([...dois, doiNormalizado])
+    setDoiInput("")
+    toast.success("DOI adicionado!")
   }
 
-  const handleRemoveReferencia = async (referenciaId: number) => {
-    // Nota: Se houver um método de delete no service, usar aqui
-    // Por enquanto, apenas remove da lista local
-    onReferenciasChange(referencias.filter((ref) => ref.id !== referenciaId))
-    toast.success("Referência removida")
+  const handleRemoveDoi = (doiToRemove: string) => {
+    onDoisChange(dois.filter((doi) => doi !== doiToRemove))
+    toast.success("DOI removido")
   }
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault()
-      handleAddReferencia()
+      handleAddDoi()
     }
   }
 
@@ -90,9 +58,9 @@ export function EtapaReferencias({
     <div className="space-y-6">
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold mb-2">Adicionar Referência por DOI</h3>
+          <h3 className="text-lg font-semibold mb-2">Adicionar Referências por DOI</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Informe o código DOI para buscar e adicionar automaticamente a referência
+            Informe os códigos DOI das referências. Elas serão processadas automaticamente ao finalizar a submissão.
           </p>
         </div>
 
@@ -103,25 +71,14 @@ export function EtapaReferencias({
               value={doiInput}
               onChange={(e) => setDoiInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              disabled={isSearching}
             />
           </div>
           <Button
             type="button"
-            onClick={handleAddReferencia}
-            disabled={isSearching || !doiInput.trim()}
+            onClick={handleAddDoi}
+            disabled={!doiInput.trim()}
           >
-            {isSearching ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Buscando...
-              </>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                Buscar
-              </>
-            )}
+            Adicionar
           </Button>
         </div>
       </div>
@@ -129,65 +86,39 @@ export function EtapaReferencias({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">
-            Referências Adicionadas ({referencias.length})
+            DOIs Adicionados ({dois.length})
           </h3>
         </div>
 
-        {isLoadingReferencias ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : referencias.length === 0 ? (
+        {dois.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-8">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-sm text-muted-foreground text-center">
-                Nenhuma referência adicionada ainda.
+                Nenhum DOI adicionado ainda.
                 <br />
-                Use o campo acima para adicionar referências por DOI.
+                Use o campo acima para adicionar DOIs. (Opcional)
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {referencias.map((referencia) => (
-              <Card key={referencia.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-base mb-2">
-                        {referencia.titulo}
-                      </CardTitle>
-                      <CardDescription className="space-y-1">
-                        <p>
-                          <span className="font-medium">Autores:</span> {referencia.autores}
-                        </p>
-                        <p>
-                          <span className="font-medium">Ano:</span> {referencia.ano}
-                        </p>
-                        {referencia.publicacao && (
-                          <p>
-                            <span className="font-medium">Publicação:</span> {referencia.publicacao}
-                          </p>
-                        )}
-                        {referencia.doiCodigo && (
-                          <p>
-                            <span className="font-medium">DOI:</span> {referencia.doiCodigo}
-                          </p>
-                        )}
-                      </CardDescription>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveReferencia(referencia.id)}
-                      className="shrink-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+          <div className="space-y-2">
+            {dois.map((doi, index) => (
+              <Card key={index}>
+                <CardContent className="flex items-center justify-between py-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{doi}</p>
                   </div>
-                </CardHeader>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveDoi(doi)}
+                    className="shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardContent>
               </Card>
             ))}
           </div>
@@ -198,7 +129,7 @@ export function EtapaReferencias({
         <Button type="button" variant="outline" onClick={onBack}>
           Voltar
         </Button>
-        <Button type="button" onClick={onNext}>
+        <Button type="button" onClick={() => onNext(dois)}>
           Continuar
         </Button>
       </div>

@@ -3,7 +3,7 @@ import { FormatoSubmissao } from "@/types/submissao/FormatoSubmissao"
 
 /**
  * Converte uma string UPPER_CASE para camelCase
- * Ex: RASCUNHO -> rascunho, EM_AVALIACAO -> emAvaliacao
+ * Ex: SUBMETIDA -> submetida, EM_AVALIACAO -> emAvaliacao
  */
 function toCamelCase(str: string): string {
   return str
@@ -22,13 +22,11 @@ function toCamelCase(str: string): string {
  * Mapeamento de camelCase para StatusSubmissao
  */
 const statusCamelCaseMap: Record<string, StatusSubmissao> = {
-  rascunho: StatusSubmissao.RASCUNHO,
   submetida: StatusSubmissao.SUBMETIDA,
   emAvaliacao: StatusSubmissao.EM_AVALIACAO,
   aprovada: StatusSubmissao.APROVADA,
   aprovadaComRessalvas: StatusSubmissao.APROVADA_COM_RESSALVAS,
   rejeitada: StatusSubmissao.REJEITADA,
-  retirada: StatusSubmissao.RETIRADA,
 }
 
 /**
@@ -46,21 +44,25 @@ const formatoCamelCaseMap: Record<string, FormatoSubmissao> = {
  * Converte StatusSubmissao para camelCase string
  */
 export function statusSubmissaoToCamelCase(status: StatusSubmissao): string {
-  return toCamelCase(status)
+  // Garante que estamos trabalhando com string
+  const statusStr = String(status);
+  return toCamelCase(statusStr);
 }
 
 /**
  * Converte FormatoSubmissao para camelCase string
  */
 export function formatoSubmissaoToCamelCase(formato: FormatoSubmissao): string {
-  return toCamelCase(formato)
+  // Garante que estamos trabalhando com string
+  const formatoStr = String(formato);
+  return toCamelCase(formatoStr);
 }
 
 /**
  * Converte string camelCase de volta para StatusSubmissao
  */
 export function camelCaseToStatusSubmissao(camelCase: string): StatusSubmissao {
-  return statusCamelCaseMap[camelCase] || StatusSubmissao.RASCUNHO
+  return statusCamelCaseMap[camelCase] || StatusSubmissao.SUBMETIDA
 }
 
 /**

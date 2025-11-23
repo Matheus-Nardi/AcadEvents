@@ -4,7 +4,7 @@ import React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { FileText, Loader2 } from "lucide-react"
+import { FileText, Loader2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/select"
 import { FormatoSubmissao } from "@/types/submissao/FormatoSubmissao"
 
+const MIN_RESUMO = 100
+
 const informacoesBasicasSchema = z.object({
   titulo: z
     .string()
@@ -34,17 +36,14 @@ const informacoesBasicasSchema = z.object({
   resumo: z
     .string()
     .min(1, "Resumo é obrigatório")
-    .min(100, "Resumo deve ter pelo menos 100 caracteres"),
+    .min(MIN_RESUMO, `Resumo deve ter pelo menos ${MIN_RESUMO} caracteres`),
   palavrasChave: z
-    .string()
-    .min(1, "Palavras-chave são obrigatórias")
-    .refine(
-      (val) => val.split(",").filter((p) => p.trim().length > 0).length >= 3,
-      "Informe pelo menos 3 palavras-chave separadas por vírgula"
-    ),
-  formato: z.nativeEnum(FormatoSubmissao, {
-    required_error: "Formato é obrigatório",
-  }),
+    .array(z.string().min(1, "Palavra-chave não pode estar vazia"))
+    .min(3, "Informe pelo menos 3 palavras-chave"),
+  formato: z.nativeEnum(FormatoSubmissao).refine(
+    (val) => val !== undefined,
+    { message: "Formato é obrigatório" }
+  ),
 })
 
 export type InformacoesBasicasFormValues = z.infer<typeof informacoesBasicasSchema>
@@ -60,18 +59,59 @@ export function EtapaInformacoesBasicas({
   defaultValues,
   isLoading = false,
 }: EtapaInformacoesBasicasProps) {
+  // Converter palavras-chave de string para array se necessário
+  const palavrasChaveInicial = React.useMemo(() => {
+    if (!defaultValues?.palavrasChave) return []
+    if (Array.isArray(defaultValues.palavrasChave)) {
+      return defaultValues.palavrasChave
+    }
+    // Se for string, converter para array
+    return (defaultValues.palavrasChave as string)
+      .split(",")
+      .map(p => p.trim())
+      .filter(p => p.length > 0)
+  }, [defaultValues?.palavrasChave])
+
   const form = useForm<InformacoesBasicasFormValues>({
     resolver: zodResolver(informacoesBasicasSchema),
     defaultValues: {
       titulo: defaultValues?.titulo || "",
       resumo: defaultValues?.resumo || "",
-      palavrasChave: defaultValues?.palavrasChave || "",
+      palavrasChave: palavrasChaveInicial,
       formato: defaultValues?.formato,
     },
   })
 
+  const palavrasChaveValue = form.watch("palavrasChave")
+  const [tagInput, setTagInput] = React.useState("")
+
   const handleSubmit = async (data: InformacoesBasicasFormValues) => {
     await onSubmit(data)
+  }
+
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && tagInput.trim()) {
+      e.preventDefault()
+      const currentTags = form.getValues("palavrasChave") || []
+      const newTag = tagInput.trim()
+      
+      // Não adicionar se já existir
+      if (!currentTags.includes(newTag)) {
+        form.setValue("palavrasChave", [...currentTags, newTag], {
+          shouldValidate: true,
+        })
+      }
+      setTagInput("")
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const currentTags = form.getValues("palavrasChave") || []
+    form.setValue(
+      "palavrasChave",
+      currentTags.filter(tag => tag !== tagToRemove),
+      { shouldValidate: true }
+    )
   }
 
   return (
@@ -101,23 +141,35 @@ export function EtapaInformacoesBasicas({
         <FormField
           control={form.control}
           name="resumo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Resumo</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Digite o resumo da submissão"
-                  className="min-h-32"
-                  disabled={isLoading}
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Resumo completo do trabalho (mínimo 100 caracteres)
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const qtdDigitada = field.value?.length || 0
+            const mostrarContador = qtdDigitada < MIN_RESUMO
+
+            return (
+              <FormItem>
+                <FormLabel>Resumo</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Textarea
+                      placeholder="Digite o resumo da submissão"
+                      className="min-h-32 pr-16"
+                      disabled={isLoading}
+                      {...field}
+                    />
+                    {mostrarContador && (
+                      <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
+                        {qtdDigitada} / {MIN_RESUMO}
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  Resumo completo do trabalho (mínimo {MIN_RESUMO} caracteres)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )
+          }}
         />
 
         <FormField
@@ -127,14 +179,43 @@ export function EtapaInformacoesBasicas({
             <FormItem>
               <FormLabel>Palavras-chave</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="ex: inteligência artificial, machine learning, deep learning"
-                  disabled={isLoading}
-                  {...field}
-                />
+                <div className="space-y-2">
+                  {/* Tags existentes */}
+                  {palavrasChaveValue && palavrasChaveValue.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-3 min-h-[3rem] border rounded-md bg-muted/30">
+                      {palavrasChaveValue.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-medium"
+                        >
+                          {tag}
+                          {!isLoading && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTag(tag)}
+                              className="ml-1 rounded-full hover:bg-primary/20 p-0.5 transition-colors"
+                              aria-label={`Remover ${tag}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Input para nova tag */}
+                  <Input
+                    placeholder="Digite uma palavra-chave e pressione Enter"
+                    disabled={isLoading}
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleAddTag}
+                  />
+                </div>
               </FormControl>
               <FormDescription>
-                Separe as palavras-chave por vírgula (mínimo 3 palavras-chave)
+                Pressione Enter para adicionar uma palavra-chave (mínimo 3 palavras-chave)
               </FormDescription>
               <FormMessage />
             </FormItem>

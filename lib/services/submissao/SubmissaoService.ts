@@ -3,6 +3,7 @@ import Cookies from 'js-cookie';
 import { Submissao } from '@/types/submissao/Submissao';
 import { SubmissaoRequest } from '@/types/submissao/SubmissaoRequest';
 import { SubmissaoRequestApi } from '@/types/submissao/SubmissaoRequestApi';
+import { SubmissaoCreateCompleteResult } from '@/types/submissao/SubmissaoCreateCompleteResult';
 import { 
   statusSubmissaoToCamelCase, 
   formatoSubmissaoToCamelCase,
@@ -31,6 +32,17 @@ class SubmissaoService {
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
+    };
+  }
+
+  private getAuthHeadersFormData() {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('Token não encontrado');
+    }
+    return {
+      'Authorization': `Bearer ${token}`,
+      // Não definir Content-Type para FormData, o browser define automaticamente com boundary
     };
   }
 
@@ -122,11 +134,24 @@ class SubmissaoService {
 
   async create(request: SubmissaoRequest): Promise<Submissao> {
     try {
-      // Converte os enums para camelCase antes de enviar
+      // O backend espera os enums no formato original (UPPER_SNAKE_CASE)
+      // O JsonStringEnumConverter com JsonNamingPolicy.CamelCase do backend
+      // faz a conversão internamente, mas parece que está esperando o formato original
+      const statusStr = String(request.status); // Ex: "SUBMETIDA", "EM_AVALIACAO"
+      const formatoStr = String(request.formato); // Ex: "ARTIGO_COMPLETO", "WORKSHOP"
+      
+      // Cria o objeto explicitamente para garantir que os enums sejam strings
       const apiRequest: SubmissaoRequestApi = {
-        ...request,
-        status: statusSubmissaoToCamelCase(request.status),
-        formato: formatoSubmissaoToCamelCase(request.formato),
+        titulo: request.titulo,
+        resumo: request.resumo,
+        palavrasChave: request.palavrasChave,
+        dataSubmissao: request.dataSubmissao,
+        dataUltimaModificacao: request.dataUltimaModificacao,
+        versao: request.versao,
+        status: statusStr,
+        formato: formatoStr,
+        eventoId: request.eventoId,
+        trilhaTematicaId: request.trilhaTematicaId,
       };
       
       const response = await axios.post(
@@ -150,11 +175,22 @@ class SubmissaoService {
 
   async update(id: number, request: SubmissaoRequest): Promise<Submissao> {
     try {
-      // Converte os enums para camelCase antes de enviar
+      // O backend espera os enums no formato original (UPPER_SNAKE_CASE)
+      const statusStr = String(request.status);
+      const formatoStr = String(request.formato);
+      
+      // Cria o objeto explicitamente para garantir que os enums sejam strings
       const apiRequest: SubmissaoRequestApi = {
-        ...request,
-        status: statusSubmissaoToCamelCase(request.status),
-        formato: formatoSubmissaoToCamelCase(request.formato),
+        titulo: request.titulo,
+        resumo: request.resumo,
+        palavrasChave: request.palavrasChave,
+        dataSubmissao: request.dataSubmissao,
+        dataUltimaModificacao: request.dataUltimaModificacao,
+        versao: request.versao,
+        status: statusStr,
+        formato: formatoStr,
+        eventoId: request.eventoId,
+        trilhaTematicaId: request.trilhaTematicaId,
       };
       
       const response = await axios.put(
@@ -186,6 +222,81 @@ class SubmissaoService {
       );
     } catch (error) {
       console.error(`Erro ao deletar submissão com ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createComplete(
+    request: SubmissaoRequest,
+    arquivo: File,
+    dois?: string[]
+  ): Promise<SubmissaoCreateCompleteResult> {
+    try {
+      // Prepara os dados da submissão em formato JSON string
+      const statusStr = String(request.status);
+      const formatoStr = String(request.formato);
+      
+      const dadosSubmissao: SubmissaoRequestApi = {
+        titulo: request.titulo,
+        resumo: request.resumo,
+        palavrasChave: request.palavrasChave,
+        dataSubmissao: request.dataSubmissao,
+        dataUltimaModificacao: request.dataUltimaModificacao,
+        versao: request.versao,
+        status: statusStr,
+        formato: formatoStr,
+        eventoId: request.eventoId,
+        trilhaTematicaId: request.trilhaTematicaId,
+      };
+
+      // Cria FormData
+      const formData = new FormData();
+      formData.append('DadosSubmissao', JSON.stringify(dadosSubmissao));
+      formData.append('Arquivo', arquivo);
+      
+      if (dois && dois.length > 0) {
+        formData.append('Dois', JSON.stringify(dois));
+      }
+
+      const response = await axios.post(
+        `${this.getApiUrl()}/submissao/complete`,
+        formData,
+        {
+          headers: this.getAuthHeadersFormData()
+        }
+      );
+
+      // Processa a resposta
+      const responseData = response.data;
+      
+      // Se a resposta tem submissao diretamente (sucesso total)
+      if (responseData.submissao) {
+        return {
+          submissao: {
+            ...responseData.submissao,
+            status: camelCaseToStatusSubmissao(responseData.submissao.status),
+            formato: camelCaseToFormatoSubmissao(responseData.submissao.formato),
+          },
+          referenciasCriadas: responseData.referenciasCriadas || 0,
+          errosReferencias: responseData.errosReferencias || [],
+          temErrosParciais: responseData.errosReferencias?.length > 0 || false,
+          mensagem: responseData.mensagem,
+        };
+      }
+      
+      // Se a resposta é a submissão diretamente (sem erros parciais)
+      return {
+        submissao: {
+          ...responseData,
+          status: camelCaseToStatusSubmissao(responseData.status),
+          formato: camelCaseToFormatoSubmissao(responseData.formato),
+        },
+        referenciasCriadas: 0,
+        errosReferencias: [],
+        temErrosParciais: false,
+      };
+    } catch (error) {
+      console.error("Erro ao criar submissão completa:", error);
       throw error;
     }
   }

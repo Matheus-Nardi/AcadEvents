@@ -10,12 +10,8 @@ import { EtapaInformacoesBasicas, InformacoesBasicasFormValues } from "@/compone
 import { EtapaReferencias } from "@/components/project/forms/submissao/EtapaReferencias"
 import { EtapaUploadArquivo } from "@/components/project/forms/submissao/EtapaUploadArquivo"
 import { submissaoService } from "@/lib/services/submissao/SubmissaoService"
-import { referenciaService } from "@/lib/services/referencia/ReferenciaService"
-import { arquivoSubmissaoService } from "@/lib/services/submissao/ArquivoSubmissaoService"
 import { SubmissaoRequest } from "@/types/submissao/SubmissaoRequest"
 import { StatusSubmissao } from "@/types/submissao/StatusSubmissao"
-import { Referencia } from "@/types/referencia/Referencia"
-import { ArquivoSubmissao } from "@/types/submissao/ArquivoSubmissao"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
 
@@ -34,11 +30,12 @@ export default function SubmissaoPage() {
   const trilhaTematicaId = Number(params.tematicaId)
   
   const [currentStep, setCurrentStep] = React.useState(1)
-  const [submissaoId, setSubmissaoId] = React.useState<number | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
+  
+  // Objeto em construção - montado progressivamente
   const [informacoesBasicas, setInformacoesBasicas] = React.useState<InformacoesBasicasFormValues | null>(null)
-  const [referencias, setReferencias] = React.useState<Referencia[]>([])
-  const [arquivos, setArquivos] = React.useState<ArquivoSubmissao[]>([])
+  const [dois, setDois] = React.useState<string[]>([])
+  const [arquivo, setArquivo] = React.useState<File | null>(null)
 
   React.useEffect(() => {
     if (!eventoId || !trilhaTematicaId || isNaN(eventoId) || isNaN(trilhaTematicaId)) {
@@ -48,50 +45,14 @@ export default function SubmissaoPage() {
   }, [eventoId, trilhaTematicaId, router])
 
   const handleInformacoesBasicasSubmit = async (data: InformacoesBasicasFormValues) => {
-    try {
-      setIsLoading(true)
-
-      // Prepara a requisição
-      const palavrasChaveArray = data.palavrasChave
-        .split(",")
-        .map((p) => p.trim())
-        .filter((p) => p.length > 0)
-
-      const request: SubmissaoRequest = {
-        titulo: data.titulo,
-        resumo: data.resumo,
-        palavrasChave: palavrasChaveArray,
-        dataSubmissao: new Date().toISOString(),
-        dataUltimaModificacao: new Date().toISOString(),
-        versao: 1,
-        status: StatusSubmissao.RASCUNHO,
-        formato: data.formato,
-        eventoId: eventoId,
-        trilhaTematicaId: trilhaTematicaId,
-      }
-
-      // Cria a submissão
-      const submissao = await submissaoService.create(request)
-      setSubmissaoId(submissao.id)
-      setInformacoesBasicas(data)
-      
-      toast.success("Informações básicas salvas com sucesso!")
-      setCurrentStep(2)
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.message || "Erro ao salvar informações básicas."
-      toast.error(errorMessage)
-    } finally {
-      setIsLoading(false)
-    }
+    setInformacoesBasicas(data)
+    toast.success("Informações básicas salvas!")
+    setCurrentStep(2)
   }
 
-  const handleReferenciasNext = () => {
-    if (submissaoId) {
-      setCurrentStep(3)
-    } else {
-      toast.error("Erro: Submissão não encontrada")
-    }
+  const handleReferenciasNext = (doisList: string[]) => {
+    setDois(doisList)
+    setCurrentStep(3)
   }
 
   const handleReferenciasBack = () => {
@@ -102,37 +63,56 @@ export default function SubmissaoPage() {
     setCurrentStep(2)
   }
 
-  const handleComplete = async () => {
-    if (!submissaoId) {
-      toast.error("Erro: Submissão não encontrada")
+  const handleComplete = async (arquivoSelecionado: File) => {
+    if (!informacoesBasicas) {
+      toast.error("Erro: Informações básicas não encontradas")
+      return
+    }
+
+    if (!arquivoSelecionado) {
+      toast.error("É necessário selecionar um arquivo para finalizar a submissão")
       return
     }
 
     try {
       setIsLoading(true)
 
-      // Atualiza o status da submissão para SUBMETIDA
-      const palavrasChaveArray = informacoesBasicas!.palavrasChave
-        .split(",")
-        .map((p) => p.trim())
-        .filter((p) => p.length > 0)
+      // Prepara a requisição completa
+      // palavrasChave já é um array no schema
+      const palavrasChaveArray = informacoesBasicas.palavrasChave
 
-      const updateRequest: SubmissaoRequest = {
-        titulo: informacoesBasicas!.titulo,
-        resumo: informacoesBasicas!.resumo,
+      const request: SubmissaoRequest = {
+        titulo: informacoesBasicas.titulo,
+        resumo: informacoesBasicas.resumo,
         palavrasChave: palavrasChaveArray,
         dataSubmissao: new Date().toISOString(),
         dataUltimaModificacao: new Date().toISOString(),
         versao: 1,
         status: StatusSubmissao.SUBMETIDA,
-        formato: informacoesBasicas!.formato,
+        formato: informacoesBasicas.formato,
         eventoId: eventoId,
         trilhaTematicaId: trilhaTematicaId,
       }
 
-      await submissaoService.update(submissaoId, updateRequest)
+      // Cria a submissão completa de uma vez
+      const resultado = await submissaoService.createComplete(
+        request,
+        arquivoSelecionado,
+        dois.length > 0 ? dois : undefined
+      )
+
+      if (resultado.temErrosParciais) {
+        toast.warning(
+          `Submissão criada com sucesso! ${resultado.referenciasCriadas} referência(s) adicionada(s), mas ${resultado.errosReferencias.length} falharam.`,
+          { duration: 5000 }
+        )
+        if (resultado.errosReferencias.length > 0) {
+          console.warn("Erros nas referências:", resultado.errosReferencias)
+        }
+      } else {
+        toast.success("Submissão realizada com sucesso!")
+      }
       
-      toast.success("Submissão realizada com sucesso!")
       router.push(`/eventos/${eventoId}`)
     } catch (error: any) {
       const errorMessage =
@@ -184,6 +164,20 @@ export default function SubmissaoPage() {
         </CardContent>
       </Card>
 
+      {/* Indicador de Progresso */}
+      {informacoesBasicas && (
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-2 text-sm">
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-muted-foreground">
+                Progresso salvo localmente. Você pode navegar entre as etapas.
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Form Content */}
       <Card>
         <CardHeader>
@@ -198,23 +192,22 @@ export default function SubmissaoPage() {
             />
           )}
 
-          {currentStep === 2 && submissaoId && (
+          {currentStep === 2 && informacoesBasicas && (
             <EtapaReferencias
-              submissaoId={submissaoId}
-              referencias={referencias}
-              onReferenciasChange={setReferencias}
+              dois={dois}
+              onDoisChange={setDois}
               onNext={handleReferenciasNext}
               onBack={handleReferenciasBack}
             />
           )}
 
-          {currentStep === 3 && submissaoId && (
+          {currentStep === 3 && informacoesBasicas && (
             <EtapaUploadArquivo
-              submissaoId={submissaoId}
-              arquivos={arquivos}
-              onArquivosChange={setArquivos}
+              arquivo={arquivo}
+              onArquivoChange={setArquivo}
               onBack={handleUploadBack}
               onComplete={handleComplete}
+              isLoading={isLoading}
             />
           )}
         </CardContent>

@@ -60,11 +60,6 @@ const formatDateShort = (dateString: string) => {
 
 const getStatusBadge = (status: StatusSubmissao) => {
   const statusConfig: Record<StatusSubmissao, { label: string; className: string; icon: React.ReactNode }> = {
-    [StatusSubmissao.RASCUNHO]: {
-      label: "Rascunho",
-      className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-      icon: <FileEdit className="h-3 w-3" />
-    },
     [StatusSubmissao.SUBMETIDA]: {
       label: "Submetida",
       className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -90,14 +85,13 @@ const getStatusBadge = (status: StatusSubmissao) => {
       className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
       icon: <XCircle className="h-3 w-3" />
     },
-    [StatusSubmissao.RETIRADA]: {
-      label: "Retirada",
-      className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-      icon: <FileX className="h-3 w-3" />
-    },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || {
+    label: status,
+    className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+    icon: <AlertCircle className="h-3 w-3" />
+  };
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${config.className}`}>
@@ -262,29 +256,6 @@ export default function SubmissaoDetailsPage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            {submissao.status === StatusSubmissao.RASCUNHO && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    toast.info("Funcionalidade de edição em desenvolvimento");
-                  }}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDelete}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Excluir
-                </Button>
-              </>
-            )}
-          </div>
         </div>
       </div>
 
