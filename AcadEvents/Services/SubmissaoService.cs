@@ -10,7 +10,6 @@ public class SubmissaoService
     private readonly AutorRepository _autorRepository;
     private readonly EventoRepository _eventoRepository;
     private readonly TrilhaTematicaRepository _trilhaTematicaRepository;
-
     public SubmissaoService(
         SubmissaoRepository submissaoRepository,
         AutorRepository autorRepository,
@@ -28,6 +27,17 @@ public class SubmissaoService
 
     public Task<Submissao?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
         => _submissaoRepository.FindByIdAsync(id, cancellationToken);
+
+    public async Task<List<Submissao>> GetByTrilhaTematicaIdAsync(long trilhaTematicaId, CancellationToken cancellationToken = default)
+    {
+        // Validar que a trilha temática existe
+        if (!await _trilhaTematicaRepository.ExistsAsync(trilhaTematicaId, cancellationToken))
+        {
+            throw new ArgumentException($"Trilha temática {trilhaTematicaId} não existe.");
+        }
+
+        return await _submissaoRepository.FindByTrilhaTematicaIdAsync(trilhaTematicaId, cancellationToken);
+    }
 
     public async Task<Submissao> CreateAsync(SubmissaoRequestDTO request, long autorId, CancellationToken cancellationToken = default)
     {
@@ -77,17 +87,22 @@ public class SubmissaoService
 
     private async Task ValidateReferencesAsync(SubmissaoRequestDTO request, long autorId, CancellationToken cancellationToken)
     {
+
+        // 1. Validar Autor
         if (!await _autorRepository.ExistsAsync(autorId, cancellationToken))
         {
             throw new ArgumentException($"Autor {autorId} não existe.");
         }
 
+        // 2. Validar Evento
         if (!await _eventoRepository.ExistsAsync(request.EventoId, cancellationToken))
         {
             throw new ArgumentException($"Evento {request.EventoId} não existe.");
         }
 
-        if (!await _trilhaTematicaRepository.ExistsAsync(request.TrilhaTematicaId, cancellationToken))
+        // 3. Validar TrilhaTematica
+        var trilhaTematica = await _trilhaTematicaRepository.FindByIdAsync(request.TrilhaTematicaId, cancellationToken);
+        if (trilhaTematica == null)
         {
             throw new ArgumentException($"Trilha temática {request.TrilhaTematicaId} não existe.");
         }

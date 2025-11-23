@@ -33,8 +33,7 @@ public class TrilhaService
         {
             Nome = request.Nome,
             Descricao = request.Descricao,
-            Coordenador = request.Coordenador,
-            LimiteSubmissoes = request.LimiteSubmissoes
+            Coordenador = request.Coordenador
         };
 
         return await _trilhaRepository.CreateAsync(trilha, cancellationToken);
@@ -86,7 +85,6 @@ public class TrilhaService
         trilha.Nome = request.Nome;
         trilha.Descricao = request.Descricao;
         trilha.Coordenador = request.Coordenador;
-        trilha.LimiteSubmissoes = request.LimiteSubmissoes;
 
         return await _trilhaRepository.UpdateAsync(trilha, cancellationToken);
     }

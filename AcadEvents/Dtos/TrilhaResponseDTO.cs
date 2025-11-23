@@ -8,7 +8,6 @@ public record TrilhaResponseDTO
     public string Nome { get; init; }
     public string Descricao { get; init; }
     public string Coordenador { get; init; }
-    public int LimiteSubmissoes { get; init; }
     public List<long> EventosIds { get; init; } = new();
 
     public static TrilhaResponseDTO ValueOf(Trilha trilha)
@@ -19,7 +18,6 @@ public record TrilhaResponseDTO
             Nome = trilha.Nome,
             Descricao = trilha.Descricao,
             Coordenador = trilha.Coordenador,
-            LimiteSubmissoes = trilha.LimiteSubmissoes,
             EventosIds = trilha.Eventos?.Select(e => e.Id).ToList() ?? new List<long>()
         };
     }

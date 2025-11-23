@@ -32,6 +32,23 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         return Ok(SubmissaoResponseDTO.ValueOf(submissao));
     }
 
+    [HttpGet("trilha-tematica/{trilhaTematicaId}")]
+    public async Task<ActionResult<List<SubmissaoResponseDTO>>> GetByTrilhaTematica(
+        long trilhaTematicaId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var submissoes = await submissaoService.GetByTrilhaTematicaIdAsync(trilhaTematicaId, cancellationToken);
+            var response = submissoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost]
     [Authorize(Roles = "Autor")]
     public async Task<ActionResult<SubmissaoResponseDTO>> Create(

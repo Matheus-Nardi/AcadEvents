@@ -16,5 +16,16 @@ public class SubmissaoRepository : BaseRepository<Submissao>
                 .ThenInclude(tt => tt.Trilha)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
+
+    public async Task<List<Submissao>> FindByTrilhaTematicaIdAsync(long trilhaTematicaId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Submissoes
+            .Include(s => s.Autor)
+            .Include(s => s.Evento)
+            .Include(s => s.TrilhaTematica)
+            .Where(s => s.TrilhaTematicaId == trilhaTematicaId)
+            .OrderByDescending(s => s.DataSubmissao)
+            .ToListAsync(cancellationToken);
+    }
 }
 
