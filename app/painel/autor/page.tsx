@@ -273,8 +273,7 @@ export default function AutorPage() {
                       variant="outline"
                       className="flex-1"
                       onClick={() => {
-                        // TODO: Navegar para página de detalhes da submissão
-                        toast.info("Funcionalidade em desenvolvimento");
+                        router.push(`/painel/autor/submissao/${submissao.id}`);
                       }}
                     >
                       <Eye className="mr-2 h-4 w-4" />
