@@ -1,6 +1,7 @@
 using AcadEvents.Dtos;
 using AcadEvents.Models;
 using AcadEvents.Repositories;
+using Microsoft.AspNetCore.Http;
 
 namespace AcadEvents.Services;
 
@@ -10,16 +11,23 @@ public class SubmissaoService
     private readonly AutorRepository _autorRepository;
     private readonly EventoRepository _eventoRepository;
     private readonly TrilhaTematicaRepository _trilhaTematicaRepository;
+    private readonly ReferenciaService _referenciaService;
+    private readonly ArquivoSubmissaoService _arquivoSubmissaoService;
+    
     public SubmissaoService(
         SubmissaoRepository submissaoRepository,
         AutorRepository autorRepository,
         EventoRepository eventoRepository,
-        TrilhaTematicaRepository trilhaTematicaRepository)
+        TrilhaTematicaRepository trilhaTematicaRepository,
+        ReferenciaService referenciaService,
+        ArquivoSubmissaoService arquivoSubmissaoService)
     {
         _submissaoRepository = submissaoRepository;
         _autorRepository = autorRepository;
         _eventoRepository = eventoRepository;
         _trilhaTematicaRepository = trilhaTematicaRepository;
+        _referenciaService = referenciaService;
+        _arquivoSubmissaoService = arquivoSubmissaoService;
     }
 
     public Task<List<Submissao>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -119,6 +127,68 @@ public class SubmissaoService
         }
 
         // Validações de SessaoId e DOIId removidas - não são mais necessárias na criação
+    }
+
+    public async Task<SubmissaoCreateCompleteResultDTO> CreateCompleteAsync(
+        SubmissaoRequestDTO dadosSubmissao,
+        long autorId,
+        IFormFile arquivo,
+        List<string>? dois,
+        CancellationToken cancellationToken = default)
+    {
+        // 1. Criar Submissão
+        var submissao = await CreateAsync(dadosSubmissao, autorId, cancellationToken);
+
+        var referenciasCriadas = new List<Referencia>();
+        var errosReferencias = new List<string>();
+
+        // 2. Processar DOIs se fornecidos
+        if (dois != null && dois.Any())
+        {
+            foreach (var doi in dois)
+            {
+                if (string.IsNullOrWhiteSpace(doi))
+                    continue;
+
+                try
+                {
+                    var referencia = await _referenciaService.CreateFromDoiAsync(doi, submissao.Id, cancellationToken);
+                    referenciasCriadas.Add(referencia);
+                }
+                catch (ArgumentException ex)
+                {
+                    errosReferencias.Add($"DOI {doi}: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    errosReferencias.Add($"DOI {doi}: Erro inesperado - {ex.Message}");
+                }
+            }
+        }
+
+        // 3. Fazer upload do arquivo (obrigatório)
+        try
+        {
+            await _arquivoSubmissaoService.UploadAsync(submissao.Id, arquivo, cancellationToken);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new InvalidOperationException($"Submissão criada, mas falha ao fazer upload do arquivo: {ex.Message}", ex);
+        }
+
+        // 4. Buscar submissão completa com relacionamentos
+        var submissaoCompleta = await _submissaoRepository.FindByIdWithRelacionamentosAsync(submissao.Id, cancellationToken);
+        if (submissaoCompleta == null)
+        {
+            throw new InvalidOperationException("Submissão criada mas não foi possível recuperá-la.");
+        }
+
+        return new SubmissaoCreateCompleteResultDTO
+        {
+            Submissao = SubmissaoResponseDTO.ValueOf(submissaoCompleta),
+            ReferenciasCriadas = referenciasCriadas.Count,
+            ErrosReferencias = errosReferencias
+        };
     }
 }
 

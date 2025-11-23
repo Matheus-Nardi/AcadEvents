@@ -1,4 +1,5 @@
 using AcadEvents.Models;
+using System.Text.Json.Serialization;
 
 namespace AcadEvents.Dtos;
 
@@ -10,7 +11,9 @@ public record SubmissaoRequestDTO
     public DateTime DataSubmissao { get; init; }
     public DateTime DataUltimaModificacao { get; init; }
     public int Versao { get; init; }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public StatusSubmissao Status { get; init; }
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public FormatoSubmissao Formato { get; init; }
     public long EventoId { get; init; }
     public long TrilhaTematicaId { get; init; }

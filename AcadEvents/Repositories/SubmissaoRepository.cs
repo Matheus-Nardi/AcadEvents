@@ -38,5 +38,14 @@ public class SubmissaoRepository : BaseRepository<Submissao>
             .OrderByDescending(s => s.DataSubmissao)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Submissao?> FindByIdWithRelacionamentosAsync(long id, CancellationToken cancellationToken = default)
+    {
+        return await _db.Submissoes
+            .Include(s => s.Autor)
+            .Include(s => s.Evento)
+            .Include(s => s.TrilhaTematica)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+    }
 }
 

@@ -1,9 +1,11 @@
 using System.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AcadEvents.Dtos;
+using AcadEvents.Models;
 using AcadEvents.Services;
 
 namespace AcadEvents.Controllers;
@@ -101,6 +103,115 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("complete")]
+    [Authorize(Roles = "Autor")]
+    public async Task<ActionResult<SubmissaoResponseDTO>> CreateComplete(
+        [FromForm] SubmissaoCreateCompleteDTO request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // 1. Validar token JWT e extrair autorId
+            var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("sub");
+                
+            if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long autorId))
+            {
+                return Unauthorized(new { message = "Token inválido: ID do autor não encontrado." });
+            }
+
+            // 2. Validar arquivo obrigatório
+            if (request.Arquivo == null || request.Arquivo.Length == 0)
+            {
+                return BadRequest(new { message = "Arquivo é obrigatório na criação da submissão." });
+            }
+
+            // 3. Validar e deserializar dados da submissão
+            if (string.IsNullOrWhiteSpace(request.DadosSubmissao))
+            {
+                return BadRequest(new { message = "Dados da submissão são obrigatórios." });
+            }
+
+            SubmissaoRequestDTO? dadosSubmissao;
+            try
+            {
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                jsonOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase));
+                
+                dadosSubmissao = JsonSerializer.Deserialize<SubmissaoRequestDTO>(request.DadosSubmissao, jsonOptions);
+                
+                if (dadosSubmissao == null)
+                {
+                    return BadRequest(new { message = "Falha ao deserializar dados da submissão." });
+                }
+            }
+            catch (JsonException ex)
+            {
+                return BadRequest(new { message = $"Erro ao processar JSON dos dados da submissão: {ex.Message}" });
+            }
+
+            // 4. Deserializar DOIs se fornecidos
+            List<string>? dois = null;
+            if (!string.IsNullOrWhiteSpace(request.Dois))
+            {
+                try
+                {
+                    var jsonOptions = new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    };
+                    dois = JsonSerializer.Deserialize<List<string>>(request.Dois, jsonOptions);
+                }
+                catch (JsonException ex)
+                {
+                    return BadRequest(new { message = $"Erro ao processar JSON de DOIs: {ex.Message}" });
+                }
+            }
+
+            // 5. Chamar service para processar tudo
+            var resultado = await submissaoService.CreateCompleteAsync(
+                dadosSubmissao, 
+                autorId, 
+                request.Arquivo, 
+                dois, 
+                cancellationToken);
+
+            // 6. Retornar resposta apropriada
+            if (resultado.TemErrosParciais)
+            {
+                return StatusCode(201, new
+                {
+                    submissao = resultado.Submissao,
+                    mensagem = "Submissão criada com sucesso, mas algumas referências falharam.",
+                    referenciasCriadas = resultado.ReferenciasCriadas,
+                    errosReferencias = resultado.ErrosReferencias
+                });
+            }
+
+            return CreatedAtAction(nameof(GetById), new { id = resultado.Submissao.Id }, resultado.Submissao);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(500, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new 
+            { 
+                message = "Erro interno ao processar a criação completa da submissão.", 
+                error = ex.Message 
+            });
         }
     }
 
