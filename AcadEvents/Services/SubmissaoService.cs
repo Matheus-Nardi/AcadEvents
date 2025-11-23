@@ -39,6 +39,17 @@ public class SubmissaoService
         return await _submissaoRepository.FindByTrilhaTematicaIdAsync(trilhaTematicaId, cancellationToken);
     }
 
+    public async Task<List<Submissao>> GetByAutorIdAsync(long autorId, CancellationToken cancellationToken = default)
+    {
+        // Validar que o autor existe
+        if (!await _autorRepository.ExistsAsync(autorId, cancellationToken))
+        {
+            throw new ArgumentException($"Autor {autorId} não existe.");
+        }
+
+        return await _submissaoRepository.FindByAutorIdAsync(autorId, cancellationToken);
+    }
+
     public async Task<Submissao> CreateAsync(SubmissaoRequestDTO request, long autorId, CancellationToken cancellationToken = default)
     {
         await ValidateReferencesAsync(request, autorId, cancellationToken);
