@@ -201,7 +201,7 @@ export default function AutorPage() {
                 <p className="text-sm text-muted-foreground text-center mb-6">
                   Você ainda não possui submissões. Comece criando uma nova submissão em um evento.
                 </p>
-                <Button onClick={() => router.push("/eventos")}>
+                <Button onClick={() => router.push("/")}>
                   Explorar Eventos
                 </Button>
               </CardContent>
@@ -317,7 +317,7 @@ export default function AutorPage() {
             <CardContent>
               <Button
                 className="w-full"
-                onClick={() => router.push("/eventos")}
+                onClick={() => router.push("/")}
               >
                 <Upload className="mr-2 h-4 w-4" />
                 Nova Submissão

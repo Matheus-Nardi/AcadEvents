@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Avaliador } from '@/types/auth/Avaliador';
+import { AvaliadorRequest } from '@/types/auth/AvaliadorRequest';
 
 class AvaliadorService {
   private getApiUrl(): string {
@@ -42,6 +43,27 @@ class AvaliadorService {
         return null;
       }
       console.error(`Erro ao buscar avaliador com email ${email}:`, error);
+      throw error;
+    }
+  }
+
+  async create(request: AvaliadorRequest): Promise<Avaliador> {
+    try {
+      const response = await axios.post(
+        `${this.getApiUrl()}/avaliador`,
+        request,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 400) {
+        throw new Error(error.response.data || 'Erro ao criar avaliador');
+      }
+      console.error('Erro ao criar avaliador:', error);
       throw error;
     }
   }

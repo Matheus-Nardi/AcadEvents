@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Organizador } from '@/types/auth/Organizador';
+import { OrganizadorRequest } from '@/types/auth/OrganizadorRequest';
 
 class OrganizadorService {
   private getApiUrl(): string {
@@ -42,6 +43,27 @@ class OrganizadorService {
         return null;
       }
       console.error(`Erro ao buscar organizador com email ${email}:`, error);
+      throw error;
+    }
+  }
+
+  async create(request: OrganizadorRequest): Promise<Organizador> {
+    try {
+      const response = await axios.post(
+        `${this.getApiUrl()}/organizador`,
+        request,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 400) {
+        throw new Error(error.response.data || 'Erro ao criar organizador');
+      }
+      console.error('Erro ao criar organizador:', error);
       throw error;
     }
   }

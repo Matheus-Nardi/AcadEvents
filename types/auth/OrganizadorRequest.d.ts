@@ -1,12 +1,11 @@
-export interface AvaliadorRequest {
+export interface OrganizadorRequest {
   nome: string;
   email: string;
   senha: string;
   instituicao: string;
   pais: string;
-  ativo: boolean;
-  especialidades: string[];
-  disponibilidade: boolean;
+  cargo: string;
+  permissoes: string[];
   perfilORCIDId: number | null;
 }
 
