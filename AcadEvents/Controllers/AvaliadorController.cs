@@ -1,6 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AcadEvents.Dtos;
 using AcadEvents.Services;
@@ -51,23 +48,11 @@ namespace AcadEvents.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Avaliador")]
         public async Task<ActionResult<AvaliadorResponseDTO>> Create(
             [FromBody] AvaliadorRequestDTO request,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Avaliador tentando criar novo avaliador");
-
-            // Extrai o ID do usuário do token
-            var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub");
-
-            if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long avaliadorId))
-            {
-                _logger.LogWarning("ID do avaliador não encontrado no token");
-                return Unauthorized(new { message = "Token inválido" });
-            }
+            _logger.LogInformation("Criando novo avaliador");
 
             try
             {
@@ -76,30 +61,18 @@ namespace AcadEvents.Controllers
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Erro ao criar avaliador para usuário {AvaliadorId}", avaliadorId);
+                _logger.LogWarning(ex, "Erro ao criar avaliador");
                 return BadRequest(ex.Message);
             }
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Avaliador")]
         public async Task<IActionResult> Update(
             long id,
             [FromBody] AvaliadorRequestDTO request,
             CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Avaliador tentando atualizar avaliador com Id {AvaliadorId}", id);
-
-            // Extrai o ID do usuário do token
-            var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub");
-
-            if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long avaliadorAutenticadoId))
-            {
-                _logger.LogWarning("ID do avaliador não encontrado no token");
-                return Unauthorized(new { message = "Token inválido" });
-            }
+            _logger.LogInformation("Atualizando avaliador com Id {AvaliadorId}", id);
 
             try
             {
@@ -117,21 +90,9 @@ namespace AcadEvents.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Avaliador")]
         public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Avaliador tentando deletar avaliador com Id {AvaliadorId}", id);
-
-            // Extrai o ID do usuário do token
-            var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub");
-
-            if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long avaliadorAutenticadoId))
-            {
-                _logger.LogWarning("ID do avaliador não encontrado no token");
-                return Unauthorized(new { message = "Token inválido" });
-            }
+            _logger.LogInformation("Deletando avaliador com Id {AvaliadorId}", id);
 
             try
             {
