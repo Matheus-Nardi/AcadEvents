@@ -83,6 +83,22 @@ class ArquivoSubmissaoService {
       throw error;
     }
   }
+
+  async downloadArquivo(id: number): Promise<Blob> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/arquivosubmissao/${id}/download`,
+        {
+          headers: this.getAuthHeaders(),
+          responseType: 'blob',
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Erro ao fazer download do arquivo com ID ${id}:`, error);
+      throw error;
+    }
+  }
 }
 
 export const arquivoSubmissaoService = new ArquivoSubmissaoService();

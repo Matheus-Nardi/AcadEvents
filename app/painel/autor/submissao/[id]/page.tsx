@@ -23,11 +23,24 @@ import {
   BookOpen,
   Link as LinkIcon,
   Copy,
-  ExternalLink
+  ExternalLink,
+  BookMarked,
+  Download,
+  ZoomIn,
+  ZoomOut,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { submissaoService } from "@/lib/services/submissao/SubmissaoService";
+import { referenciaService } from "@/lib/services/referencia/ReferenciaService";
+import { arquivoSubmissaoService } from "@/lib/services/submissao/ArquivoSubmissaoService";
 import { Submissao } from "@/types/submissao/Submissao";
+import { Referencia } from "@/types/referencia/Referencia";
+import { ArquivoSubmissao } from "@/types/submissao/ArquivoSubmissao";
 import { StatusSubmissao } from "@/types/submissao/StatusSubmissao";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -101,6 +114,12 @@ const getStatusBadge = (status: StatusSubmissao) => {
   );
 };
 
+// Configurar worker do pdfjs
+if (typeof window !== "undefined") {
+  // Usar worker do pdfjs-dist através do CDN jsDelivr (mais confiável)
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
+
 const getFormatoBadge = (formato: string) => {
   const formatoConfig: Record<string, { label: string; className: string }> = {
     ARTIGO_COMPLETO: {
@@ -143,7 +162,15 @@ export default function SubmissaoDetailsPage() {
   const submissaoId = Number(params.id);
 
   const [submissao, setSubmissao] = React.useState<Submissao | null>(null);
+  const [referencias, setReferencias] = React.useState<Referencia[]>([]);
+  const [arquivoSubmissao, setArquivoSubmissao] = React.useState<ArquivoSubmissao | null>(null);
+  const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
+  const [numPages, setNumPages] = React.useState<number | null>(null);
+  const [pageNumber, setPageNumber] = React.useState(1);
+  const [scale, setScale] = React.useState(1.0);
   const [loading, setLoading] = React.useState(true);
+  const [loadingReferencias, setLoadingReferencias] = React.useState(false);
+  const [loadingArquivo, setLoadingArquivo] = React.useState(false);
 
   React.useEffect(() => {
     const fetchSubmissao = async () => {
@@ -157,6 +184,45 @@ export default function SubmissaoDetailsPage() {
         setLoading(true);
         const data = await submissaoService.getById(submissaoId);
         setSubmissao(data);
+        
+        // Buscar referências da submissão
+        try {
+          setLoadingReferencias(true);
+          const refs = await referenciaService.getBySubmissao(submissaoId);
+          setReferencias(refs);
+        } catch (refError: any) {
+          console.error("Erro ao buscar referências:", refError);
+          // Não bloqueia a exibição da submissão se houver erro ao buscar referências
+          setReferencias([]);
+        } finally {
+          setLoadingReferencias(false);
+        }
+
+        // Buscar arquivo da submissão
+        try {
+          setLoadingArquivo(true);
+          const arquivos = await arquivoSubmissaoService.listarPorSubmissao(submissaoId);
+          if (arquivos && arquivos.length > 0) {
+            // Pegar o arquivo mais recente (maior versão ou mais recente)
+            const arquivoMaisRecente = arquivos.reduce((prev, current) => {
+              if (prev.versao > current.versao) return prev;
+              if (prev.versao < current.versao) return current;
+              // Se versões iguais, pegar o mais recente pela data
+              return new Date(prev.dataUpload) > new Date(current.dataUpload) ? prev : current;
+            });
+            setArquivoSubmissao(arquivoMaisRecente);
+            
+            // Fazer download do arquivo e criar blob URL
+            const blob = await arquivoSubmissaoService.downloadArquivo(arquivoMaisRecente.id);
+            const url = URL.createObjectURL(blob);
+            setPdfUrl(url);
+          }
+        } catch (arquivoError: any) {
+          console.error("Erro ao buscar arquivo:", arquivoError);
+          // Não bloqueia a exibição da submissão se houver erro ao buscar arquivo
+        } finally {
+          setLoadingArquivo(false);
+        }
       } catch (error: any) {
         console.error("Erro ao buscar submissão:", error);
         const errorMessage = 
@@ -194,6 +260,54 @@ export default function SubmissaoDetailsPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copiado para a área de transferência");
+  };
+
+  // Limpar blob URL ao desmontar
+  React.useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setPageNumber(1);
+  };
+
+  const goToPrevPage = () => {
+    setPageNumber((prev) => Math.max(1, prev - 1));
+  };
+
+  const goToNextPage = () => {
+    setPageNumber((prev) => (numPages ? Math.min(numPages, prev + 1) : prev));
+  };
+
+  const handleZoomIn = () => {
+    setScale((prev) => Math.min(2.0, prev + 0.2));
+  };
+
+  const handleZoomOut = () => {
+    setScale((prev) => Math.max(0.5, prev - 0.2));
+  };
+
+  const handleDownload = async () => {
+    if (!arquivoSubmissao) return;
+    try {
+      const blob = await arquivoSubmissaoService.downloadArquivo(arquivoSubmissao.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = arquivoSubmissao.nomeArquivo;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Download iniciado");
+    } catch (error: any) {
+      toast.error("Erro ao fazer download do arquivo");
+    }
   };
 
   if (loading) {
@@ -301,6 +415,142 @@ export default function SubmissaoDetailsPage() {
             </Card>
           )}
 
+          {/* Documento da Submissão */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Documento da Submissão
+                  {loadingArquivo && (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </CardTitle>
+                {arquivoSubmissao && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownload}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </Button>
+                )}
+              </div>
+              {arquivoSubmissao && (
+                <CardDescription>
+                  {arquivoSubmissao.nomeArquivo} • {(arquivoSubmissao.tamanho / 1024).toFixed(2)} KB • Versão {arquivoSubmissao.versao}
+                </CardDescription>
+              )}
+            </CardHeader>
+            <CardContent>
+              {loadingArquivo ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : !arquivoSubmissao ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum arquivo foi anexado a esta submissão.
+                  </p>
+                </div>
+              ) : !pdfUrl ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
+                  <p className="text-sm text-muted-foreground">
+                    Erro ao carregar o documento.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Controles */}
+                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={goToPrevPage}
+                        disabled={pageNumber <= 1}
+                        className="h-8 w-8"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm font-medium min-w-[100px] text-center">
+                        Página {pageNumber} de {numPages || "?"}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={goToNextPage}
+                        disabled={!numPages || pageNumber >= numPages}
+                        className="h-8 w-8"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleZoomOut}
+                        disabled={scale <= 0.5}
+                        className="h-8 w-8"
+                      >
+                        <ZoomOut className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm font-medium min-w-[60px] text-center">
+                        {Math.round(scale * 100)}%
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleZoomIn}
+                        disabled={scale >= 2.0}
+                        className="h-8 w-8"
+                      >
+                        <ZoomIn className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Visualizador PDF */}
+                  <div className="flex justify-center border rounded-lg bg-muted/30 p-4 overflow-auto max-h-[800px]">
+                    <Document
+                      file={pdfUrl}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      loading={
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                      }
+                      error={
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <AlertCircle className="h-12 w-12 text-destructive mb-3" />
+                          <p className="text-sm text-destructive font-medium mb-1">
+                            Erro ao carregar o PDF
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            O arquivo pode estar corrompido ou em um formato não suportado.
+                          </p>
+                        </div>
+                      }
+                    >
+                      <Page
+                        pageNumber={pageNumber}
+                        scale={scale}
+                        renderTextLayer={true}
+                        renderAnnotationLayer={true}
+                        className="shadow-lg"
+                      />
+                    </Document>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Informações Adicionais */}
           {(submissao.sessaoId || submissao.doiId) && (
             <Card>
@@ -352,6 +602,132 @@ export default function SubmissaoDetailsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Referências */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookMarked className="h-5 w-5" />
+                Referências
+                {loadingReferencias && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </CardTitle>
+              <CardDescription>
+                {referencias.length > 0 
+                  ? `${referencias.length} referência${referencias.length > 1 ? 's' : ''} encontrada${referencias.length > 1 ? 's' : ''}`
+                  : "Nenhuma referência cadastrada para esta submissão"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingReferencias ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : referencias.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <BookMarked className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma referência foi adicionada a esta submissão.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {referencias.map((referencia) => (
+                    <div
+                      key={referencia.id}
+                      className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-semibold text-base leading-tight">
+                            {referencia.titulo}
+                          </h4>
+                          {referencia.doiValido && (
+                            <span className="inline-flex items-center rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-0.5 text-xs font-medium shrink-0">
+                              DOI Válido
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                          {referencia.autores && (
+                            <div className="flex items-center gap-1.5">
+                              <User className="h-3.5 w-3.5" />
+                              <span>{referencia.autores}</span>
+                            </div>
+                          )}
+                          {referencia.ano && (
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span>{referencia.ano}</span>
+                            </div>
+                          )}
+                          {referencia.publicacao && (
+                            <div className="flex items-center gap-1.5">
+                              <BookOpen className="h-3.5 w-3.5" />
+                              <span className="line-clamp-1">{referencia.publicacao}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {referencia.doiCodigo && (
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">DOI</p>
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={referencia.doiUrl || `https://doi.org/${referencia.doiCodigo}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm font-mono text-primary hover:underline break-all"
+                                >
+                                  {referencia.doiCodigo}
+                                </a>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0"
+                                  onClick={() => copyToClipboard(referencia.doiCodigo || "")}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {referencia.abstract && (
+                          <div className="pt-2">
+                            <p className="text-xs text-muted-foreground mb-1">Resumo</p>
+                            <p className="text-sm text-muted-foreground line-clamp-3">
+                              {referencia.abstract}
+                            </p>
+                          </div>
+                        )}
+
+                        {(referencia.tipoPublicacao || referencia.publisher) && (
+                          <div className="flex flex-wrap gap-2 pt-2 border-t">
+                            {referencia.tipoPublicacao && (
+                              <span className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground px-2 py-1 text-xs">
+                                {referencia.tipoPublicacao}
+                              </span>
+                            )}
+                            {referencia.publisher && (
+                              <span className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground px-2 py-1 text-xs">
+                                {referencia.publisher}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}

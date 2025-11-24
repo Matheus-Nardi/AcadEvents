@@ -51,9 +51,7 @@ class ReferenciaService {
       const response = await axios.get(
         `${this.getApiUrl()}/referencia/submissao/${submissaoId}`,
         {
-          headers: {
-            'Content-Type': 'application/json',
-          }
+          headers: this.getAuthHeaders(),
         }
       );
       return response.data;
