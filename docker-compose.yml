@@ -28,6 +28,8 @@ services:
       - "8080:8080"
     depends_on:
       - sqlserver
+    volumes:
+      - ./storage/artigos:/app/storage/artigos
     networks:
       - acadevents-network
     # O backend tentará conectar automaticamente quando o SQL Server estiver pronto

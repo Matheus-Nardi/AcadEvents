@@ -2,6 +2,7 @@ using AcadEvents.Models;
 using AcadEvents.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using System.IO;
 
 namespace AcadEvents.Services;
@@ -16,14 +17,19 @@ public class ArquivoSubmissaoService
     public ArquivoSubmissaoService(
         ArquivoSubmissaoRepository arquivoRepository,
         SubmissaoRepository submissaoRepository,
-        ILogger<ArquivoSubmissaoService> logger)
+        ILogger<ArquivoSubmissaoService> logger,
+        IConfiguration configuration)
     {
         _arquivoRepository = arquivoRepository;
         _submissaoRepository = submissaoRepository;
         _logger = logger;
 
-        var documentos = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        _storagePath = Path.Combine(documentos, "AcadEvents", "Artigos");
+        // Lê o caminho da configuração, com fallback para o padrão
+        _storagePath = configuration["FileStorage:Path"] 
+            ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), 
+                "AcadEvents", 
+                "Artigos");
     }
 
     public async Task<ArquivoSubmissao> UploadAsync(long submissaoId, IFormFile arquivo, CancellationToken cancellationToken = default)
@@ -75,6 +81,24 @@ public class ArquivoSubmissaoService
 
     public Task<List<ArquivoSubmissao>> ListarPorSubmissaoAsync(long submissaoId, CancellationToken cancellationToken = default)
         => _arquivoRepository.FindBySubmissaoIdAsync(submissaoId, cancellationToken);
+
+    public async Task<(byte[] bytes, string contentType, string fileName)?> ObterArquivoBytesAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var arquivo = await GetByIdAsync(id, cancellationToken);
+        if (arquivo == null)
+        {
+            return null;
+        }
+
+        if (!File.Exists(arquivo.Caminho))
+        {
+            _logger.LogWarning("Arquivo físico não encontrado no caminho: {Caminho}", arquivo.Caminho);
+            return null;
+        }
+
+        var bytes = await File.ReadAllBytesAsync(arquivo.Caminho, cancellationToken);
+        return (bytes, arquivo.Tipo, arquivo.NomeArquivo);
+    }
 }
 
 
