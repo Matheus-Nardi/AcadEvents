@@ -43,6 +43,11 @@ public class ConviteAvaliacaoService
     {
         return await _repository.FindByAvaliadorIdAsync(avaliadorId, cancellationToken);
     }
+    
+    public async Task<List<ConviteAvaliacao>> FindByAvaliadorIdWhereResponseIsNullAsync(long avaliadorId, CancellationToken cancellationToken = default)
+    {
+        return await _repository.FindByAvaliadorWhereResponseIsNullAsync(avaliadorId, cancellationToken);
+    }
 
     public async Task<List<ConviteAvaliacao>> FindBySubmissaoIdAsync(long submissaoId, CancellationToken cancellationToken = default)
     {
@@ -181,6 +186,11 @@ public class ConviteAvaliacaoService
     public async Task<ConviteAvaliacao?> RecusarConviteAsync(long conviteId, long avaliadorId, string motivoRecusa, CancellationToken cancellationToken = default)
     {
         return await _repository.RecusarConviteAsync(conviteId, avaliadorId, motivoRecusa, cancellationToken);
+    }
+
+    public async Task<List<ConviteAvaliacao>> FindByAvaliadorComFiltroAsync(long avaliadorId, StatusConvite status, CancellationToken cancellationToken = default)
+    {
+        return await _repository.FindByAvaliadorComFiltroAsync(avaliadorId, status, cancellationToken);
     }
 }
 

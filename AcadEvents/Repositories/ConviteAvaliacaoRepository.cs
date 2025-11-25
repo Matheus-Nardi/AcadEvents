@@ -4,6 +4,14 @@ using AcadEvents.Models;
 
 namespace AcadEvents.Repositories;
 
+public enum StatusConvite
+{
+    Todos,
+    Pendentes,
+    Aceitos,
+    Recusados
+}
+
 public class ConviteAvaliacaoRepository : BaseRepository<ConviteAvaliacao>
 {
     public ConviteAvaliacaoRepository(AcadEventsDbContext db) : base(db) { }
@@ -84,10 +92,38 @@ public class ConviteAvaliacaoRepository : BaseRepository<ConviteAvaliacao>
         return convites;
     }
 
+    public async Task<List<ConviteAvaliacao>> FindByAvaliadorWhereResponseIsNullAsync(long avaliadorId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _db.Set<ConviteAvaliacao>().Include(c => c.Avaliador)
+            .Where(c => c.AvaliadorId == avaliadorId)
+            .Where(c => c.Aceito == null)
+            .OrderByDescending(c => c.DataConvite)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<bool> ExisteConviteAsync(long avaliadorId, long submissaoId, CancellationToken cancellationToken = default)
     {
         return await _db.Set<ConviteAvaliacao>()
             .AnyAsync(c => c.AvaliadorId == avaliadorId && c.SubmissaoId == submissaoId, cancellationToken);
+    }
+
+    public async Task<List<ConviteAvaliacao>> FindByAvaliadorComFiltroAsync(long avaliadorId, StatusConvite status, CancellationToken cancellationToken = default)
+    {
+        var query = _db.Set<ConviteAvaliacao>()
+            .Where(c => c.AvaliadorId == avaliadorId);
+
+        query = status switch
+        {
+            StatusConvite.Pendentes => query.Where(c => c.Aceito == null),
+            StatusConvite.Aceitos => query.Where(c => c.Aceito == true),
+            StatusConvite.Recusados => query.Where(c => c.Aceito == false),
+            _ => query // Todos
+        };
+
+        return await query
+            .OrderByDescending(c => c.DataConvite)
+            .ToListAsync(cancellationToken);
     }
 }
 

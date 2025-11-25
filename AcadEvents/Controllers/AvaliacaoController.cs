@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using AcadEvents.Models;
 using AcadEvents.Services;
 using AcadEvents.Dtos;
+using AcadEvents.Repositories;
 
 namespace AcadEvents.Controllers;
 
@@ -122,7 +123,7 @@ public class AvaliacaoController : ControllerBase
             return Unauthorized(new { message = "Token inválido" });
         }
 
-        var convites = await conviteService.FindByAvaliadorIdAsync(userId, cancellationToken);
+        var convites = await conviteService.FindByAvaliadorIdWhereResponseIsNullAsync(userId, cancellationToken);
         var response = convites.Select(ConviteAvaliacaoResponseDTO.ValueOf).ToList();
         return Ok(response);
     }
@@ -205,6 +206,26 @@ public class AvaliacaoController : ControllerBase
             logger.LogWarning(ex, "Erro ao recusar convite {ConviteId} para avaliador {AvaliadorId}", conviteId, userId);
             return BadRequest(ex.Message);
         }
+    }
+    
+    [HttpGet("meus-convites/filtro")]
+    [Authorize(Roles = "Avaliador")]
+    public async Task<ActionResult<List<ConviteAvaliacaoResponseDTO>>> GetMeusConvitesComFiltro(
+        [FromQuery] StatusConvite status = StatusConvite.Todos,
+        CancellationToken cancellationToken = default)
+    {
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                           ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+                           ?? User.FindFirstValue("sub");
+        
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized("Token JWT inválido ou sem identificador de usuário.");
+        }
+
+        var convites = await conviteService.FindByAvaliadorComFiltroAsync(userId, status, cancellationToken);
+        var response = convites.Select(ConviteAvaliacaoResponseDTO.ValueOf).ToList();
+        return Ok(response);
     }
 }
 
