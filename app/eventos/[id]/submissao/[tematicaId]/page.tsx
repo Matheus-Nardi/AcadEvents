@@ -113,7 +113,8 @@ export default function SubmissaoPage() {
         toast.success("Submissão realizada com sucesso!")
       }
       
-      router.push(`/eventos/${eventoId}`)
+      // Redireciona para a tela da submissão criada
+      router.push(`/painel/autor/submissao/${resultado.submissao.id}`)
     } catch (error: any) {
       const errorMessage =
         error?.response?.data?.message || "Erro ao finalizar submissão."
