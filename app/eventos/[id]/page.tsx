@@ -491,14 +491,14 @@ export default function EventoDetailsPage() {
                             <Users className="h-4 w-4 text-muted-foreground" />
                             <span className="text-muted-foreground">Avaliadores:</span>
                             <span className="font-medium">
-                              {comite.avaliadoresIds?.length || 0}
+                              {comite.avaliadores?.length || comite.avaliadoresIds?.length || 0}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
                             <span className="text-muted-foreground">Coordenadores:</span>
                             <span className="font-medium">
-                              {comite.coordenadoresIds?.length || 0}
+                              {comite.coordenadores?.length || comite.coordenadoresIds?.length || 0}
                             </span>
                           </div>
                         </div>

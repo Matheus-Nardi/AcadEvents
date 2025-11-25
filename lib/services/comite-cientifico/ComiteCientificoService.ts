@@ -106,10 +106,10 @@ class ComiteCientificoService {
     }
   }
 
-  async addAvaliador(comiteId: number, avaliadorId: number): Promise<ComiteCientifico> {
+  async addAvaliador(comiteId: number, emailAvaliador: string): Promise<ComiteCientifico> {
     try {
       const response = await axios.post(
-        `${this.getApiUrl()}/comitecientifico/${comiteId}/avaliadores/${avaliadorId}`,
+        `${this.getApiUrl()}/comitecientifico/${comiteId}/avaliadores/${emailAvaliador}`,
         {},
         {
           headers: this.getAuthHeaders()
@@ -117,7 +117,7 @@ class ComiteCientificoService {
       );
       return response.data;
     } catch (error) {
-      console.error(`Erro ao adicionar avaliador ${avaliadorId} ao comitê ${comiteId}:`, error);
+      console.error(`Erro ao adicionar avaliador ${emailAvaliador} ao comitê ${comiteId}:`, error);
       throw error;
     }
   }
@@ -137,10 +137,10 @@ class ComiteCientificoService {
     }
   }
 
-  async addCoordenador(comiteId: number, organizadorId: number): Promise<ComiteCientifico> {
+  async addCoordenador(comiteId: number, emailCoordenador: string): Promise<ComiteCientifico> {
     try {
       const response = await axios.post(
-        `${this.getApiUrl()}/comitecientifico/${comiteId}/coordenadores/${organizadorId}`,
+        `${this.getApiUrl()}/comitecientifico/${comiteId}/coordenadores/${emailCoordenador}`,
         {},
         {
           headers: this.getAuthHeaders()
@@ -148,7 +148,7 @@ class ComiteCientificoService {
       );
       return response.data;
     } catch (error) {
-      console.error(`Erro ao adicionar coordenador ${organizadorId} ao comitê ${comiteId}:`, error);
+      console.error(`Erro ao adicionar coordenador ${emailCoordenador} ao comitê ${comiteId}:`, error);
       throw error;
     }
   }
@@ -167,6 +167,7 @@ class ComiteCientificoService {
       throw error;
     }
   }
+  
 }
 
 export const comiteCientificoService = new ComiteCientificoService();

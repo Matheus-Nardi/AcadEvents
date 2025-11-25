@@ -106,12 +106,6 @@ export default function ComitesPage() {
             </p>
           </div>
         </div>
-        <Button asChild disabled>
-          <Link href="#">
-            <Plus className="mr-2 h-4 w-4" />
-            Criar Novo Comitê
-          </Link>
-        </Button>
       </div>
 
       {/* Stats */}
@@ -128,7 +122,7 @@ export default function ComitesPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">
-                {comites.reduce((sum, c) => sum + (c.avaliadoresIds?.length || 0), 0)}
+                {comites.reduce((sum, c) => sum + (c.avaliadores?.length || c.avaliadoresIds?.length || 0), 0)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Total de Avaliadores
@@ -138,7 +132,7 @@ export default function ComitesPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">
-                {comites.reduce((sum, c) => sum + (c.coordenadoresIds?.length || 0), 0)}
+                {comites.reduce((sum, c) => sum + (c.coordenadores?.length || c.coordenadoresIds?.length || 0), 0)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Total de Coordenadores
@@ -185,14 +179,14 @@ export default function ComitesPage() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Avaliadores:</span>
                     <span className="font-medium">
-                      {comite.avaliadoresIds?.length || 0}
+                      {comite.avaliadores?.length || comite.avaliadoresIds?.length || 0}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Coordenadores:</span>
                     <span className="font-medium">
-                      {comite.coordenadoresIds?.length || 0}
+                      {comite.coordenadores?.length || comite.coordenadoresIds?.length || 0}
                     </span>
                   </div>
                 </div>
@@ -202,6 +196,7 @@ export default function ComitesPage() {
                 <Button
                   variant="outline"
                   className="w-full"
+                  onClick={() => router.push(`/painel/organizador/comites/${comite.id}`)}
                 >
                   Ver Detalhes
                 </Button>
