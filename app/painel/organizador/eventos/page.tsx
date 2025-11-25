@@ -31,35 +31,15 @@ import { toast } from "sonner";
 
 const getStatusBadge = (status: string) => {
   const statusConfig: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
-    Planejamento: {
-      label: "Planejamento",
-      className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      icon: <Clock className="h-3 w-3" />
-    },
-    InscricoesAbertas: {
-      label: "Inscrições Abertas",
+    SubmissoesAbertas: {
+      label: "Submissões Abertas",
       className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
       icon: <CheckCircle2 className="h-3 w-3" />
     },
-    InscricoesEncerradas: {
-      label: "Inscrições Encerradas",
+    SubmissoesEncerradas: {
+      label: "Submissões Encerradas",
       className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
       icon: <AlertCircle className="h-3 w-3" />
-    },
-    EmAndamento: {
-      label: "Em Andamento",
-      className: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-      icon: <Clock className="h-3 w-3" />
-    },
-    Encerrado: {
-      label: "Encerrado",
-      className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-      icon: <CheckCircle2 className="h-3 w-3" />
-    },
-    Cancelado: {
-      label: "Cancelado",
-      className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-      icon: <XCircle className="h-3 w-3" />
     },
   };
 
@@ -165,20 +145,20 @@ export default function EventosPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">
-                {eventos.filter(e => e.statusEvento === "InscricoesAbertas" || e.statusEvento === "EmAndamento").length}
+                {eventos.filter(e => e.statusEvento === "SubmissoesAbertas").length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Eventos Ativos
+                Submissões Abertas
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">
-                {eventos.filter(e => e.statusEvento === "Encerrado").length}
+                {eventos.filter(e => e.statusEvento === "SubmissoesEncerradas").length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Eventos Encerrados
+                Submissões Encerradas
               </p>
             </CardContent>
           </Card>

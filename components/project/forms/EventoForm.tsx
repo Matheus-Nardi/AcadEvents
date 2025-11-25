@@ -96,12 +96,8 @@ interface EventoFormProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: "Planejamento", label: "Planejamento" },
-  { value: "InscricoesAbertas", label: "Inscrições Abertas" },
-  { value: "InscricoesEncerradas", label: "Inscrições Encerradas" },
-  { value: "EmAndamento", label: "Em Andamento" },
-  { value: "Encerrado", label: "Encerrado" },
-  { value: "Cancelado", label: "Cancelado" },
+  { value: "SubmissoesAbertas", label: "Submissões Abertas" },
+  { value: "SubmissoesEncerradas", label: "Submissões Encerradas" },
 ];
 
 export default function EventoForm({ 
