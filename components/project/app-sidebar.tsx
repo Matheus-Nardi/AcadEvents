@@ -102,12 +102,17 @@ const autorMenuItems = [
 // Menu items para Avaliador
 const avaliadorMenuItems = [
   {
-    title: "Convites",
-    url: "/painel/avaliador",
+    title: "Histórico de Convites",
+    url: "/painel/avaliador/convites",
     icon: Clock,
   },
   {
-    title: "Avaliações",
+    title: "Submissões para Avaliar",
+    url: "/painel/avaliador/submissoes",
+    icon: FileText,
+  },
+  {
+    title: "Minhas Avaliações",
     url: "/painel/avaliador",
     icon: CheckCircle2,
   },

@@ -175,6 +175,36 @@ class AvaliacaoService {
       throw error;
     }
   }
+
+  async getMinhasAvaliacoesCriadas(): Promise<Avaliacao[]> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/avaliacao/minhas`,
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar minhas avaliações criadas:", error);
+      throw error;
+    }
+  }
+
+  async getAvaliacoesPorSubmissao(submissaoId: number): Promise<Avaliacao[]> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/avaliacao/submissao/${submissaoId}`,
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Erro ao buscar avaliações da submissão ${submissaoId}:`, error);
+      throw error;
+    }
+  }
 }
 
 export const avaliacaoService = new AvaliacaoService();

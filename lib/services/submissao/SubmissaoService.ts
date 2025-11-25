@@ -132,6 +132,26 @@ class SubmissaoService {
     }
   }
 
+  async getSubmissoesParaAvaliador(): Promise<Submissao[]> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/submissao/avaliador/minhas`,
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      // Converte os enums de camelCase para o formato do frontend
+      return response.data.map((submissao: any) => ({
+        ...submissao,
+        status: camelCaseToStatusSubmissao(submissao.status),
+        formato: camelCaseToFormatoSubmissao(submissao.formato),
+      }));
+    } catch (error) {
+      console.error("Erro ao buscar submissões para avaliar:", error);
+      throw error;
+    }
+  }
+
   async create(request: SubmissaoRequest): Promise<Submissao> {
     try {
       // O backend espera os enums no formato original (UPPER_SNAKE_CASE)

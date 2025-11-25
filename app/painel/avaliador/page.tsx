@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Loader2, CheckCircle2, XCircle, FileText, Clock } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle, FileText, Clock, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -31,6 +31,8 @@ export default function AvaliadorPage() {
   const [dialogRecusarAberto, setDialogRecusarAberto] = React.useState(false)
   const [conviteRecusarId, setConviteRecusarId] = React.useState<number | null>(null)
   const [justificativa, setJustificativa] = React.useState("")
+  const [modalAvaliacaoAberto, setModalAvaliacaoAberto] = React.useState(false)
+  const [avaliacaoSelecionada, setAvaliacaoSelecionada] = React.useState<Avaliacao | null>(null)
 
   const getApiMessage = (e: unknown, fallback: string) => {
     if (typeof e === "object" && e !== null) {
@@ -99,6 +101,16 @@ export default function AvaliadorPage() {
     setJustificativa("")
   }
 
+  const abrirModalAvaliacao = (avaliacao: Avaliacao) => {
+    setAvaliacaoSelecionada(avaliacao)
+    setModalAvaliacaoAberto(true)
+  }
+
+  const fecharModalAvaliacao = () => {
+    setModalAvaliacaoAberto(false)
+    setAvaliacaoSelecionada(null)
+  }
+
   const recusarConvite = async () => {
     if (!conviteRecusarId) return
     if (justificativa.trim().length === 0) {
@@ -134,7 +146,7 @@ export default function AvaliadorPage() {
           <div>
             <h2 className="text-xl font-semibold mb-3">Convites de Avaliação</h2>
             {loadingConvites ? (
-              <div className="flex items-center justify-center min-h-[160px]">
+              <div className="flex items-center justify-center min-h-40">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : convites.length === 0 ? (
@@ -188,7 +200,7 @@ export default function AvaliadorPage() {
           <div>
             <h2 className="text-xl font-semibold mb-3">Minhas Avaliações</h2>
             {loadingAvaliacoes ? (
-              <div className="flex items-center justify-center min-h-[160px]">
+              <div className="flex items-center justify-center min-h-40">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : avaliacoes.length === 0 ? (
@@ -217,8 +229,9 @@ export default function AvaliadorPage() {
                       <Button
                         variant={av.nota && av.nota > 0 ? "outline" : "default"}
                         className="w-full"
-                        onClick={() => {}}
+                        onClick={() => abrirModalAvaliacao(av)}
                       >
+                        <Eye className="mr-2 h-4 w-4" />
                         {av.nota && av.nota > 0 ? "Ver avaliação" : "Avaliar"}
                       </Button>
                     </CardFooter>
@@ -297,6 +310,67 @@ export default function AvaliadorPage() {
                   Recusar Convite
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modalAvaliacaoAberto} onOpenChange={setModalAvaliacaoAberto}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Avaliação</DialogTitle>
+            <DialogDescription>
+              Submissão #{avaliacaoSelecionada?.submissaoId}
+            </DialogDescription>
+          </DialogHeader>
+
+          {avaliacaoSelecionada && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-semibold uppercase">Status</p>
+                  <p className="text-sm">
+                    {avaliacaoSelecionada.nota && avaliacaoSelecionada.nota > 0 
+                      ? "Concluída" 
+                      : "Pendente"}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-semibold uppercase">Data da Avaliação</p>
+                  <p className="text-sm">
+                    {avaliacaoSelecionada.nota && avaliacaoSelecionada.nota > 0
+                      ? formatDate(avaliacaoSelecionada.dataAvaliacao)
+                      : "Ainda não avaliado"}
+                  </p>
+                </div>
+              </div>
+
+              {avaliacaoSelecionada.nota && avaliacaoSelecionada.nota > 0 && (
+                <>
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Geral</p>
+                    <div className="bg-primary/10 rounded-lg p-4">
+                      <p className="text-3xl font-bold text-primary">{avaliacaoSelecionada.nota.toFixed(1)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">de 10 pontos</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-semibold uppercase">Comentários</p>
+                    <div className="bg-muted rounded-lg p-4">
+                      <p className="text-sm whitespace-pre-wrap">
+                        {avaliacaoSelecionada.comentario || "Sem comentários adicionais"}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={fecharModalAvaliacao}>
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
