@@ -126,6 +126,24 @@ class AvaliacaoService {
     }
   }
 
+  async getMeusConvitesComFiltro(status: string = 'Todos'): Promise<ConviteAvaliacao[]> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/avaliacao/meus-convites/filtro`,
+        {
+          params: {
+            status: status
+          },
+          headers: this.getAuthHeaders()
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Erro ao buscar meus convites com filtro ${status}:`, error);
+      throw error;
+    }
+  }
+
   async aceitarConvite(conviteId: number): Promise<ConviteAvaliacao> {
     try {
       const response = await axios.post(

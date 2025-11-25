@@ -4,6 +4,8 @@ import React from "react"
 import { Loader2, CheckCircle2, XCircle, FileText, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 import { avaliacaoService } from "@/lib/services/avaliacao/AvaliacaoService"
 import { ConviteAvaliacao } from "@/types/avaliacao/ConviteAvaliacao"
 import { Avaliacao } from "@/types/avaliacao/Avaliacao"
@@ -26,6 +28,9 @@ export default function AvaliadorPage() {
   const [loadingConvites, setLoadingConvites] = React.useState(true)
   const [loadingAvaliacoes, setLoadingAvaliacoes] = React.useState(true)
   const [processing, setProcessing] = React.useState<number | null>(null)
+  const [dialogRecusarAberto, setDialogRecusarAberto] = React.useState(false)
+  const [conviteRecusarId, setConviteRecusarId] = React.useState<number | null>(null)
+  const [justificativa, setJustificativa] = React.useState("")
 
   const getApiMessage = (e: unknown, fallback: string) => {
     if (typeof e === "object" && e !== null) {
@@ -82,14 +87,30 @@ export default function AvaliadorPage() {
     }
   }
 
-  const recusarConvite = async (id: number) => {
-    const motivo = window.prompt("Informe o motivo da recusa:") || ""
-    if (motivo.trim().length === 0) return
+  const abrirDialogRecusar = (id: number) => {
+    setConviteRecusarId(id)
+    setJustificativa("")
+    setDialogRecusarAberto(true)
+  }
+
+  const fecharDialogRecusar = () => {
+    setDialogRecusarAberto(false)
+    setConviteRecusarId(null)
+    setJustificativa("")
+  }
+
+  const recusarConvite = async () => {
+    if (!conviteRecusarId) return
+    if (justificativa.trim().length === 0) {
+      toast.error("Por favor, informe o motivo da recusa.")
+      return
+    }
     try {
-      setProcessing(id)
-      await avaliacaoService.recusarConvite(id, { motivoRecusa: motivo })
+      setProcessing(conviteRecusarId)
+      await avaliacaoService.recusarConvite(conviteRecusarId, { motivoRecusa: justificativa })
       toast.success("Convite recusado")
       await loadConvites()
+      fecharDialogRecusar()
     } catch (error: unknown) {
       const errorMessage = getApiMessage(error, "Não foi possível recusar o convite.")
       toast.error(errorMessage)
@@ -149,7 +170,7 @@ export default function AvaliadorPage() {
                           </Button>
                           <Button
                             variant="destructive"
-                            onClick={() => recusarConvite(convite.id)}
+                            onClick={() => abrirDialogRecusar(convite.id)}
                             disabled={processing === convite.id}
                           >
                             <XCircle className="mr-2 h-4 w-4" />
@@ -229,6 +250,57 @@ export default function AvaliadorPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={dialogRecusarAberto} onOpenChange={setDialogRecusarAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Recusar Convite</DialogTitle>
+            <DialogDescription>
+              Por favor, informe o motivo da recusa do convite de avaliação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="justificativa" className="text-sm font-medium">
+                Justificativa
+              </label>
+              <Textarea
+                id="justificativa"
+                placeholder="Descreva o motivo da recusa..."
+                value={justificativa}
+                onChange={(e) => setJustificativa(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={fecharDialogRecusar}
+              disabled={processing === conviteRecusarId}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={recusarConvite}
+              disabled={processing === conviteRecusarId || justificativa.trim().length === 0}
+            >
+              {processing === conviteRecusarId ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Recusando...
+                </>
+              ) : (
+                <>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Recusar Convite
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
