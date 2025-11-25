@@ -12,7 +12,15 @@ public class AvaliacaoRepository : BaseRepository<Avaliacao>
     {
         return await _db.Set<Avaliacao>()
             .Where(a => a.AvaliadorId == avaliadorId)
-            .OrderByDescending(a => a.DataFim)
+            .OrderByDescending(a => a.DataCriacao)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Avaliacao>> FindBySubmissaoIdAsync(long submissaoId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Set<Avaliacao>()
+            .Where(a => a.SubmissaoId == submissaoId)
+            .OrderByDescending(a => a.DataCriacao)
             .ToListAsync(cancellationToken);
     }
 }

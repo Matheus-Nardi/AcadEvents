@@ -47,5 +47,17 @@ public class SubmissaoRepository : BaseRepository<Submissao>
             .Include(s => s.TrilhaTematica)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
+
+    public async Task<List<Submissao>> FindForAvaliadorAvaliacaoAsync(long avaliadorId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Submissoes
+            .Include(s => s.Autor)
+            .Include(s => s.Evento)
+            .Include(s => s.TrilhaTematica)
+            .Where(s => s.Convites
+                .Any(c => c.AvaliadorId == avaliadorId && c.Aceito == true))
+            .OrderByDescending(s => s.DataSubmissao)
+            .ToListAsync(cancellationToken);
+    }
 }
 

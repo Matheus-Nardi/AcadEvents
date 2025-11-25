@@ -41,7 +41,12 @@ public class AvaliacaoService
         return await _repository.FindByAvaliadorIdAsync(avaliadorId, cancellationToken);
     }
 
-    public async Task<Avaliacao> CreateAsync(AvaliacaoRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<List<Avaliacao>> FindBySubmissaoIdAsync(long submissaoId, CancellationToken cancellationToken = default)
+    {
+        return await _repository.FindBySubmissaoIdAsync(submissaoId, cancellationToken);
+    }
+
+    public async Task<Avaliacao> CreateAsync(AvaliacaoRequestDTO request, long avaliadorId, CancellationToken cancellationToken = default)
     {
         // Verificar se a submissão existe e obter o evento relacionado
         var submissao = await _submissaoRepository.FindByIdWithEventoAsync(request.SubmissaoId, cancellationToken);
@@ -50,21 +55,21 @@ public class AvaliacaoService
             throw new ArgumentException($"Submissão {request.SubmissaoId} não existe.");
         }
 
-        var avaliadorExists = await _avaliadorRepository.ExistsAsync(request.AvaliadorId, cancellationToken);
+        var avaliadorExists = await _avaliadorRepository.ExistsAsync(avaliadorId, cancellationToken);
         if (!avaliadorExists)
         {
-            throw new ArgumentException($"Avaliador {request.AvaliadorId} não existe.");
+            throw new ArgumentException($"Avaliador {avaliadorId} não existe.");
         }
 
         // Verificar se o avaliador aceitou o convite de avaliação para esta submissão
         var conviteAceito = await _conviteAvaliacaoRepository.ExisteConviteAceitoAsync(
-            request.AvaliadorId, 
+            avaliadorId, 
             request.SubmissaoId, 
             cancellationToken);
         
         if (!conviteAceito)
         {
-            throw new ArgumentException($"O avaliador {request.AvaliadorId} não aceitou o convite de avaliação para a submissão {request.SubmissaoId}.");
+            throw new ArgumentException($"O avaliador {avaliadorId} não aceitou o convite de avaliação para a submissão {request.SubmissaoId}.");
         }
 
         // Verificar se a submissão está associada a um evento
@@ -77,19 +82,18 @@ public class AvaliacaoService
 
         // Verificar se o avaliador faz parte do comitê científico do evento
         var fazParteDoComite = await _comiteCientificoRepository.AvaliadorFazParteDoComiteDoEventoAsync(
-            request.AvaliadorId, 
+            avaliadorId, 
             eventoId, 
             cancellationToken);
 
         if (!fazParteDoComite)
         {
-            throw new ArgumentException($"O avaliador {request.AvaliadorId} não faz parte do comitê científico do evento relacionado à submissão.");
+            throw new ArgumentException($"O avaliador {avaliadorId} não faz parte do comitê científico do evento relacionado à submissão.");
         }
 
         var avaliacao = new Avaliacao
         {
-            DataInicio = request.DataInicio,
-            DataFim = request.DataFim,
+            DataCriacao = DateTime.Now,
             NotaGeral = request.NotaGeral,
             NotaOriginalidade = request.NotaOriginalidade,
             NotaMetodologia = request.NotaMetodologia,
@@ -97,7 +101,7 @@ public class AvaliacaoService
             NotaRedacao = request.NotaRedacao,
             Recomendacao = request.Recomendacao,
             Confidencial = request.Confidencial,
-            AvaliadorId = request.AvaliadorId,
+            AvaliadorId = avaliadorId,
             SubmissaoId = request.SubmissaoId
         };
 

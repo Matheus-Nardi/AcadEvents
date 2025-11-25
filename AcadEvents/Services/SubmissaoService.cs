@@ -219,6 +219,11 @@ public class SubmissaoService
             ErrosReferencias = errosReferencias
         };
     }
+
+    public async Task<List<Submissao>> GetForAvaliadorAvaliacaoAsync(long avaliadorId, CancellationToken cancellationToken = default)
+    {
+        return await _submissaoRepository.FindForAvaliadorAvaliacaoAsync(avaliadorId, cancellationToken);
+    }
 }
 
 

@@ -2,8 +2,8 @@
 
 public class Avaliacao : DefaultModel
 {
-    public DateTime DataInicio { get; set; }
-    public DateTime DataFim { get; set; }
+    public DateTime DataCriacao { get; set; }
+    
     public double NotaGeral { get; set; }
     public double NotaOriginalidade { get; set; }
     public double NotaMetodologia { get; set; }

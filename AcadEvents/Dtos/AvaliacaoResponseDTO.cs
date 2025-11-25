@@ -5,8 +5,7 @@ namespace AcadEvents.Dtos;
 public record AvaliacaoResponseDTO
 {
     public long Id { get; init; }
-    public DateTime DataInicio { get; init; }
-    public DateTime DataFim { get; init; }
+    public DateTime DataCriacao { get; set; }
     public double NotaGeral { get; init; }
     public double NotaOriginalidade { get; init; }
     public double NotaMetodologia { get; init; }
@@ -24,8 +23,7 @@ public record AvaliacaoResponseDTO
         return new AvaliacaoResponseDTO
         {
             Id = avaliacao.Id,
-            DataInicio = avaliacao.DataInicio,
-            DataFim = avaliacao.DataFim,
+            DataCriacao =  avaliacao.DataCriacao,
             NotaGeral = avaliacao.NotaGeral,
             NotaOriginalidade = avaliacao.NotaOriginalidade,
             NotaMetodologia = avaliacao.NotaMetodologia,

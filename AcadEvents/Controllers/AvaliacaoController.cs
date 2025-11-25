@@ -67,7 +67,7 @@ public class AvaliacaoController : ControllerBase
 
         try
         {
-            var avaliacao = await service.CreateAsync(request, cancellationToken);
+            var avaliacao = await service.CreateAsync(request, avaliadorId, cancellationToken);
             var response = AvaliacaoResponseDTO.ValueOf(avaliacao);
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
@@ -226,6 +226,56 @@ public class AvaliacaoController : ControllerBase
         var convites = await conviteService.FindByAvaliadorComFiltroAsync(userId, status, cancellationToken);
         var response = convites.Select(ConviteAvaliacaoResponseDTO.ValueOf).ToList();
         return Ok(response);
+    }
+
+    [HttpGet("minhas")]
+    [Authorize(Roles = "Avaliador")]
+    public async Task<ActionResult<List<AvaliacaoResponseDTO>>> GetMinhasAvaliacoesCriadas(CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Avaliador tentando recuperar todas suas avaliações criadas");
+
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out var avaliadorId))
+        {
+            logger.LogWarning("ID do avaliador não encontrado no token");
+            return Unauthorized(new { message = "Token inválido" });
+        }
+
+        try
+        {
+            var avaliacoes = await service.FindByAvaliadorIdAsync(avaliadorId, cancellationToken);
+            var response = avaliacoes.Select(AvaliacaoResponseDTO.ValueOf).ToList();
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Erro ao buscar avaliações do avaliador {AvaliadorId}", avaliadorId);
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("submissao/{submissaoId}")]
+    [Authorize(Roles = "Avaliador")]
+    public async Task<ActionResult<List<AvaliacaoResponseDTO>>> GetAvaliacoesPorSubmissao(
+        long submissaoId,
+        CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Avaliador tentando recuperar avaliações da submissão {SubmissaoId}", submissaoId);
+
+        try
+        {
+            var avaliacoes = await service.FindBySubmissaoIdAsync(submissaoId, cancellationToken);
+            var response = avaliacoes.Select(AvaliacaoResponseDTO.ValueOf).ToList();
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Erro ao buscar avaliações da submissão {SubmissaoId}", submissaoId);
+            return BadRequest(ex.Message);
+        }
     }
 }
 

@@ -78,6 +78,33 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         }
     }
 
+    [HttpGet("avaliador/minhas")]
+    [Authorize(Roles = "Avaliador")]
+    public async Task<ActionResult<List<SubmissaoResponseDTO>>> GetSubmissoesParaAvaliador(
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Extrair o ID do avaliador do token
+            var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue("sub");
+                
+            if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long avaliadorId))
+            {
+                return Unauthorized(new { message = "Token inválido: ID do avaliador não encontrado." });
+            }
+
+            var submissoes = await submissaoService.GetForAvaliadorAvaliacaoAsync(avaliadorId, cancellationToken);
+            var response = submissoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPost]
     [Authorize(Roles = "Autor")]
     public async Task<ActionResult<SubmissaoResponseDTO>> Create(
