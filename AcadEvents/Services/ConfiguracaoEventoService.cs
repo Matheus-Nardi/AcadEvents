@@ -42,6 +42,10 @@ public class ConfiguracaoEventoService
                 throw new ArgumentException($"O evento com Id {eventoId} já possui uma configuração associada (Id: {evento.ConfiguracaoEventoId}).");
         }
 
+        // Validar que o prazo de submissão não acontece antes da data de início do evento
+        if (request.PrazoSubmissao < evento.DataInicio)
+            throw new ArgumentException($"O prazo de submissão ({request.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({evento.DataInicio:dd/MM/yyyy}).");
+
         var configuracao = new ConfiguracaoEvento
         {
             PrazoSubmissao = request.PrazoSubmissao,
@@ -78,6 +82,11 @@ public class ConfiguracaoEventoService
         var configuracao = await _configuracaoEventoRepository.FindByIdAsync(id, cancellationToken);
         if (configuracao == null)
             throw new ArgumentException($"Configuração de Evento com Id {id} não encontrada.");
+
+        // Verificar se a configuração está associada a um evento e validar o prazo de submissão
+        var evento = await _eventoRepository.FindByConfiguracaoEventoIdAsync(id, cancellationToken);
+        if (evento != null && request.PrazoSubmissao < evento.DataInicio)
+            throw new ArgumentException($"O prazo de submissão ({request.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({evento.DataInicio:dd/MM/yyyy}).");
 
         configuracao.PrazoSubmissao = request.PrazoSubmissao;
         configuracao.PrazoAvaliacao = request.PrazoAvaliacao;

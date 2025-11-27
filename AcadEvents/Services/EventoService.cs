@@ -64,6 +64,10 @@ public class EventoService
         if (eventoExistente != null)
             throw new ArgumentException($"A configuração de evento com Id {request.ConfiguracaoEventoId} já está associada ao evento com Id {eventoExistente.Id}.");
 
+        // Validar que o prazo de submissão não acontece antes da data de início do evento
+        if (configuracao.PrazoSubmissao < request.DataInicio)
+            throw new ArgumentException($"O prazo de submissão ({configuracao.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({request.DataInicio:dd/MM/yyyy}).");
+
         // Criar o evento
         var evento = new Evento
         {
@@ -181,6 +185,10 @@ public class EventoService
             if (eventoComConfiguracao != null && eventoComConfiguracao.Id != id)
                 throw new ArgumentException($"A configuração de evento com Id {request.ConfiguracaoEventoId} já está associada ao evento com Id {eventoComConfiguracao.Id}.");
         }
+
+        // Validar que o prazo de submissão não acontece antes da data de início do evento
+        if (configuracao.PrazoSubmissao < request.DataInicio)
+            throw new ArgumentException($"O prazo de submissão ({configuracao.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({request.DataInicio:dd/MM/yyyy}).");
 
         // Atualizar propriedades
         evento.Nome = request.Nome;
