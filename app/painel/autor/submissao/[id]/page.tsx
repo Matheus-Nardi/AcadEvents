@@ -29,15 +29,19 @@ import {
   ZoomIn,
   ZoomOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Star,
+  MessageCircle,
 } from "lucide-react";
 import { submissaoService } from "@/lib/services/submissao/SubmissaoService";
 import { referenciaService } from "@/lib/services/referencia/ReferenciaService";
 import { arquivoSubmissaoService } from "@/lib/services/submissao/ArquivoSubmissaoService";
+import { avaliacaoService } from "@/lib/services/avaliacao/AvaliacaoService";
 import { Submissao } from "@/types/submissao/Submissao";
 import { Referencia } from "@/types/referencia/Referencia";
 import { ArquivoSubmissao } from "@/types/submissao/ArquivoSubmissao";
 import { StatusSubmissao } from "@/types/submissao/StatusSubmissao";
+import { Avaliacao } from "@/types/avaliacao/Avaliacao";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -171,6 +175,8 @@ export default function SubmissaoDetailsPage() {
   const [loading, setLoading] = React.useState(true);
   const [loadingReferencias, setLoadingReferencias] = React.useState(false);
   const [loadingArquivo, setLoadingArquivo] = React.useState(false);
+  const [avaliacoes, setAvaliacoes] = React.useState<Avaliacao[]>([]);
+  const [loadingAvaliacoes, setLoadingAvaliacoes] = React.useState(false);
 
   React.useEffect(() => {
     const fetchSubmissao = async () => {
@@ -237,6 +243,28 @@ export default function SubmissaoDetailsPage() {
 
     fetchSubmissao();
   }, [submissaoId, router]);
+
+  // Buscar avaliações da submissão para visualização do autor
+  React.useEffect(() => {
+    const fetchAvaliacoes = async () => {
+      if (!submissaoId || isNaN(submissaoId)) {
+        return;
+      }
+
+      try {
+        setLoadingAvaliacoes(true);
+        const data = await avaliacaoService.getAvaliacoesPorSubmissao(submissaoId);
+        setAvaliacoes(data);
+      } catch (error: any) {
+        console.error("Erro ao buscar avaliações da submissão:", error);
+        toast.error("Erro ao carregar avaliações da submissão.");
+      } finally {
+        setLoadingAvaliacoes(false);
+      }
+    };
+
+    fetchAvaliacoes();
+  }, [submissaoId]);
 
   const handleDelete = async () => {
     if (!submissao) return;
@@ -721,6 +749,75 @@ export default function SubmissaoDetailsPage() {
                             )}
                           </div>
                         )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Avaliações da Submissão (visão do autor) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5" />
+                Avaliações da Submissão
+                {loadingAvaliacoes && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </CardTitle>
+              <CardDescription>
+                {avaliacoes.length > 0
+                  ? `${avaliacoes.length} avaliação${avaliacoes.length > 1 ? "es" : ""} recebida${avaliacoes.length > 1 ? "s" : ""}`
+                  : "Nenhuma avaliação recebida até o momento"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingAvaliacoes ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : avaliacoes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Star className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
+                  <p className="text-sm text-muted-foreground">
+                    Sua submissão ainda não recebeu avaliações.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {avaliacoes.map((avaliacao) => (
+                    <div
+                      key={avaliacao.id}
+                      className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <Star className="h-4 w-4 text-yellow-500" />
+                            <span className="text-sm font-semibold">
+                              Nota geral: {avaliacao.notaGeral.toFixed(1)}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                            <span>Originalidade: <strong>{avaliacao.notaOriginalidade.toFixed(1)}</strong></span>
+                            <span>Metodologia: <strong>{avaliacao.notaMetodologia.toFixed(1)}</strong></span>
+                            <span>Relevância: <strong>{avaliacao.notaRelevancia.toFixed(1)}</strong></span>
+                            <span>Redação: <strong>{avaliacao.notaRedacao.toFixed(1)}</strong></span>
+                          </div>
+                          {avaliacao.recomendacao && (
+                            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <MessageCircle className="h-4 w-4 mt-0.5" />
+                              <p className="leading-relaxed whitespace-pre-wrap">
+                                {avaliacao.recomendacao}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground text-right min-w-[120px]">
+                          {formatDateShort(avaliacao.dataCriacao)}
+                        </div>
                       </div>
                     </div>
                   ))}
