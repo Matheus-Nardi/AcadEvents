@@ -20,7 +20,20 @@ import { Input } from "@/components/ui/input";
 const configuracaoEventoSchema = z.object({
   prazoSubmissao: z
     .string()
-    .min(1, "Prazo de submissão é obrigatório"),
+    .min(1, "Prazo de submissão é obrigatório")
+    .refine(
+      (dateString) => {
+        const dataSubmissao = new Date(dateString);
+        const agora = new Date();
+        // Remove os milissegundos para comparar apenas até os segundos
+        agora.setMilliseconds(0);
+        dataSubmissao.setMilliseconds(0);
+        return dataSubmissao >= agora;
+      },
+      {
+        message: "O prazo de submissão deve ser a partir da data e hora atual",
+      }
+    ),
   prazoAvaliacao: z
     .string()
     .min(1, "Prazo de avaliação é obrigatório"),
@@ -58,6 +71,18 @@ export default function ConfiguracaoEventoForm({
   disabled = false
 }: ConfiguracaoEventoFormProps) {
   const [isLoading, setIsLoading] = React.useState(false);
+
+  // Obter data/hora mínima para o input (agora)
+  const getMinDateTime = () => {
+    const agora = new Date();
+    // Formato para datetime-local: YYYY-MM-DDTHH:mm
+    const ano = agora.getFullYear();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const horas = String(agora.getHours()).padStart(2, '0');
+    const minutos = String(agora.getMinutes()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}T${horas}:${minutos}`;
+  };
 
   const form = useForm<ConfiguracaoEventoFormValues>({
     resolver: zodResolver(configuracaoEventoSchema),
@@ -97,11 +122,15 @@ export default function ConfiguracaoEventoForm({
                     <Input
                       type="datetime-local"
                       className="pl-9"
+                      min={getMinDateTime()}
                       disabled={isLoading || disabled}
                       {...field}
                     />
                   </div>
                 </FormControl>
+                <FormDescription>
+                  O prazo de submissão deve ser a partir da data e hora atual
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -110,23 +139,44 @@ export default function ConfiguracaoEventoForm({
           <FormField
             control={form.control}
             name="prazoAvaliacao"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Prazo de Avaliação</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      type="datetime-local"
-                      className="pl-9"
-                      disabled={isLoading || disabled}
-                      {...field}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const prazoSubmissao = form.watch("prazoSubmissao");
+              const getMinAvaliacao = () => {
+                if (!prazoSubmissao) {
+                  return getMinDateTime();
+                }
+                // O prazo de avaliação deve ser >= prazo de submissão
+                const dataSubmissao = new Date(prazoSubmissao);
+                const ano = dataSubmissao.getFullYear();
+                const mes = String(dataSubmissao.getMonth() + 1).padStart(2, '0');
+                const dia = String(dataSubmissao.getDate()).padStart(2, '0');
+                const horas = String(dataSubmissao.getHours()).padStart(2, '0');
+                const minutos = String(dataSubmissao.getMinutes()).padStart(2, '0');
+                return `${ano}-${mes}-${dia}T${horas}:${minutos}`;
+              };
+
+              return (
+                <FormItem>
+                  <FormLabel>Prazo de Avaliação</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        type="datetime-local"
+                        className="pl-9"
+                        min={getMinAvaliacao()}
+                        disabled={isLoading || disabled}
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    O prazo de avaliação deve ser posterior ou igual ao prazo de submissão
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         </div>
 

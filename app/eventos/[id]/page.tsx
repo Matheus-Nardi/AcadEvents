@@ -426,19 +426,41 @@ export default function EventoDetailsPage() {
                                     </div>
                                   )}
                                 </CardHeader>
-                                {isAutor(user) && (
-                                  <CardContent>
-                                    <Button
-                                      className="w-full"
-                                      onClick={() => {
-                                        router.push(`/eventos/${eventoId}/submissao/${tematica.id}`);
-                                      }}
-                                    >
-                                      <Upload className="mr-2 h-4 w-4" />
-                                      FAZER SUBMISSÃO
-                                    </Button>
-                                  </CardContent>
-                                )}
+                                {isAutor(user) && (() => {
+                                  // Verificar se a submissão está permitida
+                                  const agora = new Date();
+                                  const prazoSubmissaoExpirado = evento.configuracao?.prazoSubmissao 
+                                    ? new Date(evento.configuracao.prazoSubmissao) < agora
+                                    : false;
+                                  const eventoTerminado = evento.dataFim 
+                                    ? new Date(evento.dataFim) < agora
+                                    : false;
+                                  const submissaoPermitida = !prazoSubmissaoExpirado && !eventoTerminado;
+
+                                  return (
+                                    <CardContent>
+                                      <Button
+                                        className="w-full"
+                                        onClick={() => {
+                                          router.push(`/eventos/${eventoId}/submissao/${tematica.id}`);
+                                        }}
+                                        disabled={!submissaoPermitida}
+                                      >
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        FAZER SUBMISSÃO
+                                      </Button>
+                                      {!submissaoPermitida && (
+                                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                                          {prazoSubmissaoExpirado 
+                                            ? "O prazo de submissão expirou"
+                                            : eventoTerminado 
+                                            ? "O evento já terminou"
+                                            : "Submissão não permitida"}
+                                        </p>
+                                      )}
+                                    </CardContent>
+                                  );
+                                })()}
                               </Card>
                             ))}
                           </div>
