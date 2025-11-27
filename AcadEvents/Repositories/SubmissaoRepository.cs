@@ -59,5 +59,12 @@ public class SubmissaoRepository : BaseRepository<Submissao>
             .OrderByDescending(s => s.DataSubmissao)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<List<Submissao>> FindByEventoIdAsync(long eventoId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Submissoes
+            .Where(s => s.EventoId == eventoId)
+            .ToListAsync(cancellationToken);
+    }
 }
 

@@ -15,6 +15,8 @@ public class SubmissaoService
     private readonly ReferenciaService _referenciaService;
     private readonly ArquivoSubmissaoService _arquivoSubmissaoService;
     private readonly IEmailService _emailService;
+    private readonly ConviteAvaliacaoRepository _conviteAvaliacaoRepository;
+    private readonly ComiteCientificoRepository _comiteCientificoRepository;
     
     public SubmissaoService(
         SubmissaoRepository submissaoRepository,
@@ -23,7 +25,9 @@ public class SubmissaoService
         TrilhaTematicaRepository trilhaTematicaRepository,
         ReferenciaService referenciaService,
         ArquivoSubmissaoService arquivoSubmissaoService,
-        IEmailService emailService)
+        IEmailService emailService,
+        ConviteAvaliacaoRepository conviteAvaliacaoRepository,
+        ComiteCientificoRepository comiteCientificoRepository)
     {
         _submissaoRepository = submissaoRepository;
         _autorRepository = autorRepository;
@@ -32,6 +36,8 @@ public class SubmissaoService
         _referenciaService = referenciaService;
         _arquivoSubmissaoService = arquivoSubmissaoService;
         _emailService = emailService;
+        _conviteAvaliacaoRepository = conviteAvaliacaoRepository;
+        _comiteCientificoRepository = comiteCientificoRepository;
     }
 
     public Task<List<Submissao>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -67,7 +73,20 @@ public class SubmissaoService
         await ValidateReferencesAsync(request, autorId, cancellationToken);
 
         var submissao = MapToEntity(new Submissao(), request, autorId);
-        return await _submissaoRepository.CreateAsync(submissao, cancellationToken);
+        var submissaoCriada = await _submissaoRepository.CreateAsync(submissao, cancellationToken);
+        
+        // Criar convites automaticamente para os avaliadores dos comitês do evento
+        try
+        {
+            await CriarConvitesParaSubmissaoAsync(submissaoCriada.Id, request.EventoId, cancellationToken);
+        }
+        catch
+        {
+            // Erro na criação de convites não deve quebrar o fluxo principal
+            // A submissão já foi criada com sucesso
+        }
+        
+        return submissaoCriada;
     }
 
     public async Task<Submissao?> UpdateAsync(long id, SubmissaoRequestDTO request, CancellationToken cancellationToken = default)
@@ -212,6 +231,8 @@ public class SubmissaoService
             throw new InvalidOperationException("Submissão criada mas não foi possível recuperá-la.");
         }
 
+        // Nota: Os convites já foram criados automaticamente no CreateAsync
+
         return new SubmissaoCreateCompleteResultDTO
         {
             Submissao = SubmissaoResponseDTO.ValueOf(submissaoCompleta),
@@ -223,6 +244,54 @@ public class SubmissaoService
     public async Task<List<Submissao>> GetForAvaliadorAvaliacaoAsync(long avaliadorId, CancellationToken cancellationToken = default)
     {
         return await _submissaoRepository.FindForAvaliadorAvaliacaoAsync(avaliadorId, cancellationToken);
+    }
+
+    private async Task CriarConvitesParaSubmissaoAsync(long submissaoId, long eventoId, CancellationToken cancellationToken = default)
+    {
+        // Buscar todos os avaliadores dos comitês científicos do evento
+        var avaliadores = await _comiteCientificoRepository.FindAvaliadoresDoComiteDoEventoAsync(eventoId, cancellationToken);
+        
+        if (!avaliadores.Any())
+            return; // Não há avaliadores no comitê do evento
+        
+        // Buscar configuração do evento para obter o prazo de avaliação
+        var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);
+        if (evento?.Configuracao == null)
+            return; // Não há configuração do evento
+        
+        var prazoAvaliacao = evento.Configuracao.PrazoAvaliacao;
+        
+        // Criar convites para cada avaliador
+        var convites = new List<ConviteAvaliacao>();
+        
+        foreach (var avaliador in avaliadores)
+        {
+            // Verificar se já existe um convite para este avaliador e submissão
+            var conviteExistente = await _conviteAvaliacaoRepository.ExisteConviteAsync(
+                avaliador.Id, 
+                submissaoId, 
+                cancellationToken);
+            
+            if (!conviteExistente)
+            {
+                convites.Add(new ConviteAvaliacao
+                {
+                    DataConvite = DateTime.UtcNow,
+                    PrazoAvaliacao = prazoAvaliacao,
+                    AvaliadorId = avaliador.Id,
+                    SubmissaoId = submissaoId,
+                    Aceito = null,
+                    MotivoRecusa = string.Empty,
+                    DataResposta = null
+                });
+            }
+        }
+        
+        // Criar todos os convites em lote
+        if (convites.Any())
+        {
+            await _conviteAvaliacaoRepository.CreateBulkAsync(convites, cancellationToken);
+        }
     }
 }
 

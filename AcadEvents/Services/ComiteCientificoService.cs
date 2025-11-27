@@ -12,19 +12,25 @@ public class ComiteCientificoService
     private readonly OrganizadorRepository _organizadorRepository;
     private readonly AvaliadorRepository _avaliadorRepository;
     private readonly IEmailService _emailService;
+    private readonly ConviteAvaliacaoRepository _conviteAvaliacaoRepository;
+    private readonly SubmissaoRepository _submissaoRepository;
 
     public ComiteCientificoService(
         ComiteCientificoRepository comiteCientificoRepository,
         EventoRepository eventoRepository,
         OrganizadorRepository organizadorRepository,
         AvaliadorRepository avaliadorRepository,
-        IEmailService emailService)
+        IEmailService emailService,
+        ConviteAvaliacaoRepository conviteAvaliacaoRepository,
+        SubmissaoRepository submissaoRepository)
     {
         _comiteCientificoRepository = comiteCientificoRepository;
         _eventoRepository = eventoRepository;
         _organizadorRepository = organizadorRepository;
         _avaliadorRepository = avaliadorRepository;
         _emailService = emailService;
+        _conviteAvaliacaoRepository = conviteAvaliacaoRepository;
+        _submissaoRepository = submissaoRepository;
     }
 
     public async Task<List<ComiteCientifico>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -237,6 +243,20 @@ public class ComiteCientificoService
                 // Erro no envio de email não deve quebrar o fluxo principal
             }
         }
+
+        // Criar convites automaticamente para o avaliador adicionado para todas as submissões do evento
+        if (evento != null)
+        {
+            try
+            {
+                await CriarConvitesParaAvaliadorAdicionadoAsync(avaliador.Id, evento.Id, cancellationToken);
+            }
+            catch
+            {
+                // Erro na criação de convites não deve quebrar o fluxo principal
+                // O avaliador já foi adicionado com sucesso
+            }
+        }
         
         return comite!;
     }
@@ -279,6 +299,54 @@ public class ComiteCientificoService
         await _comiteCientificoRepository.RemoveCoordenadorAsync(comiteId, organizadorId, cancellationToken);
         var comite = await _comiteCientificoRepository.FindByIdWithRelacionamentosAsync(comiteId, cancellationToken);
         return comite!;
+    }
+
+    private async Task CriarConvitesParaAvaliadorAdicionadoAsync(long avaliadorId, long eventoId, CancellationToken cancellationToken = default)
+    {
+        // Buscar todas as submissões do evento
+        var submissoes = await _submissaoRepository.FindByEventoIdAsync(eventoId, cancellationToken);
+        
+        if (!submissoes.Any())
+            return; // Não há submissões para criar convites
+        
+        // Buscar configuração do evento para obter o prazo de avaliação
+        var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);
+        if (evento?.Configuracao == null)
+            return; // Não há configuração do evento
+        
+        var prazoAvaliacao = evento.Configuracao.PrazoAvaliacao;
+        
+        // Criar convites para o avaliador para cada submissão
+        var convites = new List<ConviteAvaliacao>();
+        
+        foreach (var submissao in submissoes)
+        {
+            // Verificar se já existe um convite para este avaliador e submissão
+            var conviteExistente = await _conviteAvaliacaoRepository.ExisteConviteAsync(
+                avaliadorId, 
+                submissao.Id, 
+                cancellationToken);
+            
+            if (!conviteExistente)
+            {
+                convites.Add(new ConviteAvaliacao
+                {
+                    DataConvite = DateTime.UtcNow,
+                    PrazoAvaliacao = prazoAvaliacao,
+                    AvaliadorId = avaliadorId,
+                    SubmissaoId = submissao.Id,
+                    Aceito = null,
+                    MotivoRecusa = string.Empty,
+                    DataResposta = null
+                });
+            }
+        }
+        
+        // Criar todos os convites em lote
+        if (convites.Any())
+        {
+            await _conviteAvaliacaoRepository.CreateBulkAsync(convites, cancellationToken);
+        }
     }
 }
 
