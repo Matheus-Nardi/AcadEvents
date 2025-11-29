@@ -1,7 +1,11 @@
-bin/
-obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
+# Arquivos do sistema
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDEs e editores
 .cursorrules
-storage/
+.vscode/
+.idea/
+

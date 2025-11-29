@@ -131,8 +131,8 @@ export default function AvaliadorPage() {
     }
   }
 
-  const pendentes = avaliacoes.filter(a => !a.nota || a.nota === 0)
-  const concluidas = avaliacoes.filter(a => a.nota && a.nota > 0)
+  const pendentes = avaliacoes.filter(a => !a.notaGeral || a.notaGeral === 0)
+  const concluidas = avaliacoes.filter(a => a.notaGeral && a.notaGeral > 0)
 
   return (
     <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -218,8 +218,8 @@ export default function AvaliadorPage() {
                     <CardHeader>
                       <CardTitle className="text-base">Submissão {av.submissaoId}</CardTitle>
                       <CardDescription>
-                        {av.nota && av.nota > 0 ? (
-                          <>Nota {av.nota} • Avaliado em {formatDate(av.dataAvaliacao)}</>
+                        {av.notaGeral && av.notaGeral > 0 ? (
+                          <>Nota {av.notaGeral} • Avaliado em {formatDate(av.dataCriacao)}</>
                         ) : (
                           <>Pendente de avaliação</>
                         )}
@@ -227,12 +227,12 @@ export default function AvaliadorPage() {
                     </CardHeader>
                     <CardFooter className="border-t pt-4">
                       <Button
-                        variant={av.nota && av.nota > 0 ? "outline" : "default"}
+                        variant={av.notaGeral && av.notaGeral > 0 ? "outline" : "default"}
                         className="w-full"
                         onClick={() => abrirModalAvaliacao(av)}
                       >
                         <Eye className="mr-2 h-4 w-4" />
-                        {av.nota && av.nota > 0 ? "Ver avaliação" : "Avaliar"}
+                        {av.notaGeral && av.notaGeral > 0 ? "Ver avaliação" : "Avaliar"}
                       </Button>
                     </CardFooter>
                   </Card>
@@ -330,7 +330,7 @@ export default function AvaliadorPage() {
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground font-semibold uppercase">Status</p>
                   <p className="text-sm">
-                    {avaliacaoSelecionada.nota && avaliacaoSelecionada.nota > 0 
+                    {avaliacaoSelecionada.notaGeral && avaliacaoSelecionada.notaGeral > 0 
                       ? "Concluída" 
                       : "Pendente"}
                   </p>
@@ -338,28 +338,55 @@ export default function AvaliadorPage() {
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground font-semibold uppercase">Data da Avaliação</p>
                   <p className="text-sm">
-                    {avaliacaoSelecionada.nota && avaliacaoSelecionada.nota > 0
-                      ? formatDate(avaliacaoSelecionada.dataAvaliacao)
+                    {avaliacaoSelecionada.notaGeral && avaliacaoSelecionada.notaGeral > 0
+                      ? formatDate(avaliacaoSelecionada.dataCriacao)
                       : "Ainda não avaliado"}
                   </p>
                 </div>
               </div>
 
-              {avaliacaoSelecionada.nota && avaliacaoSelecionada.nota > 0 && (
+              {avaliacaoSelecionada.notaGeral && avaliacaoSelecionada.notaGeral > 0 && (
                 <>
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Geral</p>
                     <div className="bg-primary/10 rounded-lg p-4">
-                      <p className="text-3xl font-bold text-primary">{avaliacaoSelecionada.nota.toFixed(1)}</p>
+                      <p className="text-3xl font-bold text-primary">{avaliacaoSelecionada.notaGeral.toFixed(1)}</p>
                       <p className="text-xs text-muted-foreground mt-1">de 10 pontos</p>
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Originalidade</p>
+                      <div className="bg-muted rounded-lg p-3">
+                        <p className="text-lg font-semibold">{avaliacaoSelecionada.notaOriginalidade.toFixed(1)}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Metodologia</p>
+                      <div className="bg-muted rounded-lg p-3">
+                        <p className="text-lg font-semibold">{avaliacaoSelecionada.notaMetodologia.toFixed(1)}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Relevância</p>
+                      <div className="bg-muted rounded-lg p-3">
+                        <p className="text-lg font-semibold">{avaliacaoSelecionada.notaRelevancia.toFixed(1)}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Redação</p>
+                      <div className="bg-muted rounded-lg p-3">
+                        <p className="text-lg font-semibold">{avaliacaoSelecionada.notaRedacao.toFixed(1)}</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground font-semibold uppercase">Comentários</p>
+                    <p className="text-xs text-muted-foreground font-semibold uppercase">Recomendação</p>
                     <div className="bg-muted rounded-lg p-4">
                       <p className="text-sm whitespace-pre-wrap">
-                        {avaliacaoSelecionada.comentario || "Sem comentários adicionais"}
+                        {avaliacaoSelecionada.recomendacao || "Sem recomendação"}
                       </p>
                     </div>
                   </div>
