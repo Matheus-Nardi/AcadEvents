@@ -1,0 +1,12 @@
+export interface AvaliadorRequest {
+  nome: string;
+  email: string;
+  senha: string;
+  instituicao: string;
+  pais: string;
+  ativo: boolean;
+  especialidades: string[];
+  disponibilidade: boolean;
+  perfilORCIDId: number | null;
+}
+
