@@ -9,7 +9,6 @@ public record EventoRequestDTO
     public string Local { get; init; }
     public string Site { get; init; }
     public string Logo { get; init; }
-    public string StatusEvento { get; init; }
     public long ConfiguracaoEventoId { get; init; }
 }
 

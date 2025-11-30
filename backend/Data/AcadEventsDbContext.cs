@@ -163,6 +163,11 @@ public class AcadEventsDbContext : DbContext
             .HasForeignKey<Evento>(e => e.ConfiguracaoEventoId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Configuração de valor padrão para StatusEvento
+        modelBuilder.Entity<Evento>()
+            .Property(e => e.StatusEvento)
+            .HasDefaultValue("SubmissoesAbertas");
+
         // ComiteCientifico -> Evento (CASCADE faz sentido)
         modelBuilder.Entity<ComiteCientifico>()
             .HasOne(c => c.Evento)

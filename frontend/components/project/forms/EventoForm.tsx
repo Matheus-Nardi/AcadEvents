@@ -66,9 +66,6 @@ const eventoSchema = z.object({
     .url("URL do logo inválida")
     .optional()
     .or(z.literal("")),
-  statusEvento: z
-    .string()
-    .min(1, "Status do evento é obrigatório"),
   trilhaId: z
     .string()
     .min(1, "Trilha é obrigatória"),
@@ -95,10 +92,7 @@ interface EventoFormProps {
   disabled?: boolean;
 }
 
-const STATUS_OPTIONS = [
-  { value: "SubmissoesAbertas", label: "Submissões Abertas" },
-  { value: "SubmissoesEncerradas", label: "Submissões Encerradas" },
-];
+
 
 export default function EventoForm({ 
   onNext,
@@ -120,7 +114,6 @@ export default function EventoForm({
       local: initialData?.local || "",
       site: initialData?.site || "",
       logo: initialData?.logo || "",
-      statusEvento: initialData?.statusEvento || "",
       trilhaId: (() => {
         const id: string | number | undefined = initialData?.trilhaId as any;
         if (typeof id === 'string') return id;
@@ -356,34 +349,7 @@ export default function EventoForm({
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="statusEvento"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status do Evento</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                disabled={disabled}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField

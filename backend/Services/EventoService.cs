@@ -78,7 +78,7 @@ public class EventoService
             Local = request.Local,
             Site = request.Site,
             Logo = request.Logo,
-            StatusEvento = request.StatusEvento,
+            StatusEvento = "SubmissoesAbertas",
             ConfiguracaoEventoId = request.ConfiguracaoEventoId,
             Organizadores = new List<Organizador> { organizador }
         };
@@ -198,7 +198,7 @@ public class EventoService
         evento.Local = request.Local;
         evento.Site = request.Site;
         evento.Logo = request.Logo;
-        evento.StatusEvento = request.StatusEvento;
+        evento.StatusEvento = "SubmissoesAbertas";
         evento.ConfiguracaoEventoId = request.ConfiguracaoEventoId;
 
         var eventoAtualizado = await _eventoRepository.UpdateAsync(evento, cancellationToken);

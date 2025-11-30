@@ -9,7 +9,7 @@ public class Evento : DefaultModel
     public string Local { get; set; }
     public string Site { get; set; }
     public string Logo { get; set; }
-    public string StatusEvento { get; set; }
+    public string StatusEvento { get; set; } = "SubmissoesAbertas";
 
     // Relacionamento: 1 Evento -> 1 ConfiguracaoEvento
     public long ConfiguracaoEventoId { get; set; }
