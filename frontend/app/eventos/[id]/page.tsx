@@ -344,15 +344,6 @@ export default function EventoDetailsPage() {
                       <XCircle className="h-4 w-4 text-red-600" />
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <RefreshCw className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Permite Resubmissão</span>
-                    {evento.configuracao.permiteResubmissao ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-600" />
-                    )}
-                  </div>
                 </div>
               </CardContent>
             </Card>

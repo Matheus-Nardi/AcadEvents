@@ -175,11 +175,9 @@ public static class EmailTemplateService
         DateTime prazoSubmissao,
         DateTime prazoAvaliacao,
         int numeroAvaliadoresPorSubmissao,
-        bool avaliacaoDuploCego,
-        bool permiteResubmissao)
+        bool avaliacaoDuploCego)
     {
         var avaliacaoDuploCegoTexto = avaliacaoDuploCego ? "Sim" : "Não";
-        var permiteResubmissaoTexto = permiteResubmissao ? "Sim" : "Não";
 
         return $@"
 <!DOCTYPE html>
@@ -312,10 +310,6 @@ public static class EmailTemplateService
                 <div class=""info-row"">
                     <span class=""info-label"">Avaliação Duplo Cego:</span>
                     <span class=""info-value"">{avaliacaoDuploCegoTexto}</span>
-                </div>
-                <div class=""info-row"">
-                    <span class=""info-label"">Permite Resubmissão:</span>
-                    <span class=""info-value"">{permiteResubmissaoTexto}</span>
                 </div>
             </div>
 

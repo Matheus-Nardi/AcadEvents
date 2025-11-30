@@ -51,8 +51,7 @@ public class ConfiguracaoEventoService
             PrazoSubmissao = request.PrazoSubmissao,
             PrazoAvaliacao = request.PrazoAvaliacao,
             NumeroAvaliadoresPorSubmissao = request.NumeroAvaliadoresPorSubmissao,
-            AvaliacaoDuploCego = request.AvaliacaoDuploCego,
-            PermiteResubmissao = request.PermiteResubmissao
+            AvaliacaoDuploCego = true
         };
 
 
@@ -70,8 +69,7 @@ public class ConfiguracaoEventoService
             PrazoSubmissao = request.PrazoSubmissao,
             PrazoAvaliacao = request.PrazoAvaliacao,
             NumeroAvaliadoresPorSubmissao = request.NumeroAvaliadoresPorSubmissao,
-            AvaliacaoDuploCego = request.AvaliacaoDuploCego,
-            PermiteResubmissao = request.PermiteResubmissao
+            AvaliacaoDuploCego = true
         };
 
         return await _configuracaoEventoRepository.CreateAsync(configuracao, cancellationToken);
@@ -91,8 +89,7 @@ public class ConfiguracaoEventoService
         configuracao.PrazoSubmissao = request.PrazoSubmissao;
         configuracao.PrazoAvaliacao = request.PrazoAvaliacao;
         configuracao.NumeroAvaliadoresPorSubmissao = request.NumeroAvaliadoresPorSubmissao;
-        configuracao.AvaliacaoDuploCego = request.AvaliacaoDuploCego;
-        configuracao.PermiteResubmissao = request.PermiteResubmissao;
+        configuracao.AvaliacaoDuploCego = true;
 
         return await _configuracaoEventoRepository.UpdateAsync(configuracao, cancellationToken);
     }

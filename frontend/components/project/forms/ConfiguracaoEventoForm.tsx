@@ -4,7 +4,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Calendar, Users, Loader2, Eye, RefreshCw, ArrowLeft } from "lucide-react";
+import { Calendar, Users, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -41,8 +41,6 @@ const configuracaoEventoSchema = z.object({
     .number()
     .min(1, "Número de avaliadores deve ser pelo menos 1")
     .int("Número de avaliadores deve ser um número inteiro"),
-  avaliacaoDuploCego: z.boolean(),
-  permiteResubmissao: z.boolean(),
 }).refine(
   (data) => {
     const prazoSubmissao = new Date(data.prazoSubmissao);
@@ -90,8 +88,6 @@ export default function ConfiguracaoEventoForm({
       prazoSubmissao: initialData?.prazoSubmissao || "",
       prazoAvaliacao: initialData?.prazoAvaliacao || "",
       numeroAvaliadoresPorSubmissao: initialData?.numeroAvaliadoresPorSubmissao || 1,
-      avaliacaoDuploCego: initialData?.avaliacaoDuploCego ?? false,
-      permiteResubmissao: initialData?.permiteResubmissao ?? false,
     },
   });
 
@@ -209,61 +205,6 @@ export default function ConfiguracaoEventoForm({
           )}
         />
 
-        <div className="space-y-4">
-          <FormField
-            control={form.control}
-            name="avaliacaoDuploCego"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                <FormControl>
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    disabled={isLoading || disabled}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
-                    Avaliação Duplo Cego
-                  </FormLabel>
-                  <FormDescription>
-                    Os avaliadores não verão informações dos autores durante a avaliação
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="permiteResubmissao"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                <FormControl>
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    disabled={isLoading || disabled}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="flex items-center gap-2">
-                    <RefreshCw className="h-4 w-4" />
-                    Permite Resubmissão
-                  </FormLabel>
-                  <FormDescription>
-                    Permite que autores reenviem trabalhos após avaliação
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
-        </div>
 
         <div className="flex gap-4">
           <Button 

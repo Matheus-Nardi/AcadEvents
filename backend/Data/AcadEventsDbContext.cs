@@ -168,6 +168,11 @@ public class AcadEventsDbContext : DbContext
             .Property(e => e.StatusEvento)
             .HasDefaultValue("SubmissoesAbertas");
 
+        // Configuração de valor padrão para AvaliacaoDuploCego
+        modelBuilder.Entity<ConfiguracaoEvento>()
+            .Property(c => c.AvaliacaoDuploCego)
+            .HasDefaultValue(true);
+
         // ComiteCientifico -> Evento (CASCADE faz sentido)
         modelBuilder.Entity<ComiteCientifico>()
             .HasOne(c => c.Evento)

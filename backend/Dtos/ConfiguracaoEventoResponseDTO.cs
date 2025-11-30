@@ -9,7 +9,6 @@ public record ConfiguracaoEventoResponseDTO
     public DateTime PrazoAvaliacao { get; init; }
     public int NumeroAvaliadoresPorSubmissao { get; init; }
     public bool AvaliacaoDuploCego { get; init; }
-    public bool PermiteResubmissao { get; init; }
 
     public static ConfiguracaoEventoResponseDTO ValueOf(ConfiguracaoEvento configuracao)
     {
@@ -19,8 +18,7 @@ public record ConfiguracaoEventoResponseDTO
             PrazoSubmissao = configuracao.PrazoSubmissao,
             PrazoAvaliacao = configuracao.PrazoAvaliacao,
             NumeroAvaliadoresPorSubmissao = configuracao.NumeroAvaliadoresPorSubmissao,
-            AvaliacaoDuploCego = configuracao.AvaliacaoDuploCego,
-            PermiteResubmissao = configuracao.PermiteResubmissao
+            AvaliacaoDuploCego = configuracao.AvaliacaoDuploCego
         };
     }
 }

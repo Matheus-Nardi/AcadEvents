@@ -4,6 +4,5 @@ export interface ConfiguracaoEvento {
   prazoAvaliacao: string;
   numeroAvaliadoresPorSubmissao: number;
   avaliacaoDuploCego: boolean;
-  permiteResubmissao: boolean;
 }
 

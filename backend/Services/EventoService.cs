@@ -104,8 +104,7 @@ public class EventoService
                         eventoCompleto.Configuracao.PrazoSubmissao,
                         eventoCompleto.Configuracao.PrazoAvaliacao,
                         eventoCompleto.Configuracao.NumeroAvaliadoresPorSubmissao,
-                        eventoCompleto.Configuracao.AvaliacaoDuploCego,
-                        eventoCompleto.Configuracao.PermiteResubmissao);
+                        eventoCompleto.Configuracao.AvaliacaoDuploCego);
                     
                     await _emailService.SendEmailAsync(
                         organizadorEvento.Email,
@@ -142,8 +141,7 @@ public class EventoService
                             eventoCompleto.Configuracao.PrazoSubmissao,
                             eventoCompleto.Configuracao.PrazoAvaliacao,
                             eventoCompleto.Configuracao.NumeroAvaliadoresPorSubmissao,
-                            eventoCompleto.Configuracao.AvaliacaoDuploCego,
-                            eventoCompleto.Configuracao.PermiteResubmissao);
+                            eventoCompleto.Configuracao.AvaliacaoDuploCego);
                         
                         await _emailService.SendEmailAsync(
                             autor.Email,
