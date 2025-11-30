@@ -16,12 +16,10 @@ interface EtapaUploadArquivoProps {
 
 // Tipos de arquivo permitidos para submissões científicas
 const TIPOS_PERMITIDOS = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+  "application/pdf"
 ]
 
-const EXTENSOES_PERMITIDAS = [".pdf", ".doc", ".docx"]
+const EXTENSOES_PERMITIDAS = [".pdf"]
 
 export function EtapaUploadArquivo({
   arquivo,
@@ -39,7 +37,7 @@ export function EtapaUploadArquivo({
       const extension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase()
       if (!EXTENSOES_PERMITIDAS.includes(extension)) {
         toast.error(
-          "Tipo de arquivo não permitido. Apenas PDF, DOC e DOCX são aceitos."
+          "Tipo de arquivo não permitido. Apenas PDF é aceito."
         )
         return false
       }
@@ -100,7 +98,7 @@ export function EtapaUploadArquivo({
         <div>
           <h3 className="text-lg font-semibold mb-2">Enviar Arquivo</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Envie o arquivo da sua submissão. Formatos aceitos: PDF, DOC, DOCX (máximo 10MB)
+            Envie o arquivo da sua submissão. Formatos aceitos: PDF (máximo 10MB)
           </p>
         </div>
 
@@ -110,7 +108,7 @@ export function EtapaUploadArquivo({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                accept=".pdf"
                 onChange={handleFileSelect}
                 disabled={isLoading}
                 className="hidden"
@@ -125,7 +123,7 @@ export function EtapaUploadArquivo({
                   Clique para selecionar ou arraste o arquivo aqui
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  PDF, DOC ou DOCX (máximo 10MB)
+                  PDF (máximo 10MB)
                 </p>
               </label>
             </div>

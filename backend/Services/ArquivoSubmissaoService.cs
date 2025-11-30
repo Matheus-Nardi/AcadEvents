@@ -39,6 +39,11 @@ public class ArquivoSubmissaoService
             throw new ArgumentException("Arquivo inválido ou vazio.", nameof(arquivo));
         }
 
+        if(arquivo.ContentType != "application/pdf")
+        {
+            throw new ArgumentException("Tipo de arquivo não permitido. Apenas PDF é aceito.", nameof(arquivo));
+        }
+
         var submissao = await _submissaoRepository.FindByIdAsync(submissaoId, cancellationToken);
         if (submissao == null)
         {
@@ -52,6 +57,12 @@ public class ArquivoSubmissaoService
         var nomeBase = Path.GetFileNameWithoutExtension(nomeOriginal);
         var nomeArquivoFisico = $"{nomeBase}_{DateTime.UtcNow:yyyyMMddHHmmssfff}{extensao}";
         var caminhoCompleto = Path.Combine(_storagePath, nomeArquivoFisico);
+
+
+        if(extensao != ".pdf")
+        {
+            throw new ArgumentException("Extensão de arquivo não permitida. Apenas PDF é aceito.", nameof(arquivo));
+        }
 
         _logger.LogInformation("Salvando arquivo de submissão {NomeArquivo} em {Caminho}", nomeOriginal, caminhoCompleto);
 
