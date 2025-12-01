@@ -1,6 +1,7 @@
 using AcadEvents.Dtos;
 using AcadEvents.Models;
 using AcadEvents.Repositories;
+using AcadEvents.Exceptions;
 
 namespace AcadEvents.Services;
 
@@ -22,9 +23,12 @@ public class TrilhaService
         return await _trilhaRepository.FindAllWithEventosAsync(cancellationToken);
     }
 
-    public async Task<Trilha?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<Trilha> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _trilhaRepository.FindByIdWithEventosAsync(id, cancellationToken);
+        var trilha = await _trilhaRepository.FindByIdWithEventosAsync(id, cancellationToken);
+        if (trilha == null)
+            throw new NotFoundException("Trilha", id);
+        return trilha;
     }
 
     public async Task<Trilha> CreateAsync(TrilhaRequestDTO request, CancellationToken cancellationToken = default)
@@ -43,17 +47,17 @@ public class TrilhaService
     {
         var trilha = await _trilhaRepository.FindByIdWithEventosAsync(trilhaId, cancellationToken);
         if (trilha == null)
-            throw new ArgumentException($"Trilha com Id {trilhaId} não encontrada.");
+            throw new NotFoundException("Trilha", trilhaId);
 
         // Verificar se o evento existe
         var evento = await _eventoRepository.FindByIdAsync(eventoId, cancellationToken);
         if (evento == null)
-            throw new ArgumentException($"Evento com Id {eventoId} não encontrado.");
+            throw new NotFoundException("Evento", eventoId);
 
         // Verificar se já está associado
         if (trilha.Eventos.Any(e => e.Id == eventoId))
         {
-            throw new ArgumentException($"A trilha {trilhaId} já está associada ao evento {eventoId}.");
+            throw new ConflictException($"A trilha {trilhaId} já está associada ao evento {eventoId}.");
         }
 
         trilha.Eventos.Add(evento);
@@ -64,23 +68,23 @@ public class TrilhaService
     {
         var trilha = await _trilhaRepository.FindByIdWithEventosAsync(trilhaId, cancellationToken);
         if (trilha == null)
-            throw new ArgumentException($"Trilha com Id {trilhaId} não encontrada.");
+            throw new NotFoundException("Trilha", trilhaId);
 
         var evento = trilha.Eventos.FirstOrDefault(e => e.Id == eventoId);
         if (evento == null)
         {
-            throw new ArgumentException($"A trilha {trilhaId} não está associada ao evento {eventoId}.");
+            throw new NotFoundException($"A trilha {trilhaId} não está associada ao evento {eventoId}.");
         }
 
         trilha.Eventos.Remove(evento);
         return await _trilhaRepository.UpdateAsync(trilha, cancellationToken);
     }
 
-    public async Task<Trilha?> UpdateAsync(long id, TrilhaRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<Trilha> UpdateAsync(long id, TrilhaRequestDTO request, CancellationToken cancellationToken = default)
     {
         var trilha = await _trilhaRepository.FindByIdAsync(id, cancellationToken);
         if (trilha == null)
-            return null;
+            throw new NotFoundException("Trilha", id);
 
         trilha.Nome = request.Nome;
         trilha.Descricao = request.Descricao;
@@ -89,9 +93,13 @@ public class TrilhaService
         return await _trilhaRepository.UpdateAsync(trilha, cancellationToken);
     }
 
-    public async Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _trilhaRepository.DeleteAsync(id, cancellationToken);
+        var trilha = await _trilhaRepository.FindByIdAsync(id, cancellationToken);
+        if (trilha == null)
+            throw new NotFoundException("Trilha", id);
+            
+        await _trilhaRepository.DeleteAsync(id, cancellationToken);
     }
 }
 

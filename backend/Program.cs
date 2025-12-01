@@ -2,6 +2,7 @@ using AcadEvents.Repositories;
 using AcadEvents.Data;
 using AcadEvents.Extensions;
 using AcadEvents.Services;
+using AcadEvents.Handlers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -125,6 +126,6 @@ app.UseCors(MyAllowSpecificOrigins);
 // Middlewares de autenticação e autorização (devem vir antes de MapControllers)
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseExceptionHandler();
 app.MapControllers();
 app.Run();

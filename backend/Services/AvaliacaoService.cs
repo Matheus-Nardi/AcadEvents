@@ -1,6 +1,7 @@
 ﻿using AcadEvents.Models;
 using AcadEvents.Repositories;
 using AcadEvents.Dtos;
+using AcadEvents.Exceptions;
 
 namespace AcadEvents.Services;
 
@@ -26,9 +27,12 @@ public class AvaliacaoService
         _comiteCientificoRepository = comiteCientificoRepository;
     }
 
-    public async Task<Avaliacao?> FindByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<Avaliacao> FindByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _repository.FindByIdAsync(id, cancellationToken);
+        var avaliacao = await _repository.FindByIdAsync(id, cancellationToken);
+        if (avaliacao == null)
+            throw new NotFoundException("Avaliação", id);
+        return avaliacao;
     }
 
     public async Task<List<Avaliacao>> FindAllAsync(CancellationToken cancellationToken = default)
@@ -52,13 +56,13 @@ public class AvaliacaoService
         var submissao = await _submissaoRepository.FindByIdWithEventoAsync(request.SubmissaoId, cancellationToken);
         if (submissao == null)
         {
-            throw new ArgumentException($"Submissão {request.SubmissaoId} não existe.");
+            throw new NotFoundException("Submissão", request.SubmissaoId);
         }
 
         var avaliadorExists = await _avaliadorRepository.ExistsAsync(avaliadorId, cancellationToken);
         if (!avaliadorExists)
         {
-            throw new ArgumentException($"Avaliador {avaliadorId} não existe.");
+            throw new NotFoundException("Avaliador", avaliadorId);
         }
 
         // Verificar se o avaliador aceitou o convite de avaliação para esta submissão
@@ -69,13 +73,13 @@ public class AvaliacaoService
         
         if (!conviteAceito)
         {
-            throw new ArgumentException($"O avaliador {avaliadorId} não aceitou o convite de avaliação para a submissão {request.SubmissaoId}.");
+            throw new BusinessRuleException($"O avaliador {avaliadorId} não aceitou o convite de avaliação para a submissão {request.SubmissaoId}.");
         }
 
         // Verificar se a submissão está associada a um evento
         if (submissao.Evento == null)
         {
-            throw new ArgumentException($"A submissão {request.SubmissaoId} não está associada a um evento.");
+            throw new BadRequestException($"A submissão {request.SubmissaoId} não está associada a um evento.");
         }
 
         var eventoId = submissao.EventoId;
@@ -88,7 +92,7 @@ public class AvaliacaoService
 
         if (!fazParteDoComite)
         {
-            throw new ArgumentException($"O avaliador {avaliadorId} não faz parte do comitê científico do evento relacionado à submissão.");
+            throw new ForbiddenException($"O avaliador {avaliadorId} não faz parte do comitê científico do evento relacionado à submissão.");
         }
 
         var avaliacao = new Avaliacao

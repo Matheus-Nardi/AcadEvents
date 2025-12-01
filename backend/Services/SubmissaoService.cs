@@ -3,6 +3,7 @@ using AcadEvents.Models;
 using AcadEvents.Repositories;
 using Microsoft.AspNetCore.Http;
 using AcadEvents.Services.EmailTemplates;
+using AcadEvents.Exceptions;
 
 namespace AcadEvents.Services;
 
@@ -43,15 +44,20 @@ public class SubmissaoService
     public Task<List<Submissao>> GetAllAsync(CancellationToken cancellationToken = default)
         => _submissaoRepository.FindAllAsync(cancellationToken);
 
-    public Task<Submissao?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
-        => _submissaoRepository.FindByIdAsync(id, cancellationToken);
+    public async Task<Submissao> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var submissao = await _submissaoRepository.FindByIdAsync(id, cancellationToken);
+        if (submissao == null)
+            throw new NotFoundException("Submissão", id);
+        return submissao;
+    }
 
     public async Task<List<Submissao>> GetByTrilhaTematicaIdAsync(long trilhaTematicaId, CancellationToken cancellationToken = default)
     {
         // Validar que a trilha temática existe
         if (!await _trilhaTematicaRepository.ExistsAsync(trilhaTematicaId, cancellationToken))
         {
-            throw new ArgumentException($"Trilha temática {trilhaTematicaId} não existe.");
+            throw new NotFoundException("Trilha temática", trilhaTematicaId);
         }
 
         return await _submissaoRepository.FindByTrilhaTematicaIdAsync(trilhaTematicaId, cancellationToken);
@@ -62,7 +68,7 @@ public class SubmissaoService
         // Validar que o autor existe
         if (!await _autorRepository.ExistsAsync(autorId, cancellationToken))
         {
-            throw new ArgumentException($"Autor {autorId} não existe.");
+            throw new NotFoundException("Autor", autorId);
         }
 
         return await _submissaoRepository.FindByAutorIdAsync(autorId, cancellationToken);
@@ -89,12 +95,12 @@ public class SubmissaoService
         return submissaoCriada;
     }
 
-    public async Task<Submissao?> UpdateAsync(long id, SubmissaoRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<Submissao> UpdateAsync(long id, SubmissaoRequestDTO request, CancellationToken cancellationToken = default)
     {
         var submissao = await _submissaoRepository.FindByIdWithRelacionamentosAsync(id, cancellationToken);
         if (submissao is null)
         {
-            return null;
+            throw new NotFoundException("Submissão", id);
         }
 
         // No update, mantemos o autor original (ou pode extrair do token se necessário)
@@ -130,8 +136,14 @@ public class SubmissaoService
         return submissao;
     }
 
-    public Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default)
-        => _submissaoRepository.DeleteAsync(id, cancellationToken);
+    public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var submissao = await _submissaoRepository.FindByIdAsync(id, cancellationToken);
+        if (submissao == null)
+            throw new NotFoundException("Submissão", id);
+            
+        await _submissaoRepository.DeleteAsync(id, cancellationToken);
+    }
 
     private Submissao MapToEntity(Submissao entity, SubmissaoRequestDTO request, long autorId)
     {
@@ -158,20 +170,20 @@ public class SubmissaoService
         // 1. Validar Autor
         if (!await _autorRepository.ExistsAsync(autorId, cancellationToken))
         {
-            throw new ArgumentException($"Autor {autorId} não existe.");
+            throw new NotFoundException("Autor", autorId);
         }
 
         // 2. Validar Evento
         if (!await _eventoRepository.ExistsAsync(request.EventoId, cancellationToken))
         {
-            throw new ArgumentException($"Evento {request.EventoId} não existe.");
+            throw new NotFoundException("Evento", request.EventoId);
         }
 
         // 3. Validar TrilhaTematica
         var trilhaTematica = await _trilhaTematicaRepository.FindByIdAsync(request.TrilhaTematicaId, cancellationToken);
         if (trilhaTematica == null)
         {
-            throw new ArgumentException($"Trilha temática {request.TrilhaTematicaId} não existe.");
+            throw new NotFoundException("Trilha temática", request.TrilhaTematicaId);
         }
 
         // Validações de SessaoId e DOIId removidas - não são mais necessárias na criação
@@ -203,10 +215,14 @@ public class SubmissaoService
                     var referencia = await _referenciaService.CreateFromDoiAsync(doi, submissao.Id, cancellationToken);
                     referenciasCriadas.Add(referencia);
                 }
-                catch (ArgumentException ex)
-                {
-                    errosReferencias.Add($"DOI {doi}: {ex.Message}");
-                }
+        catch (BadRequestException ex)
+        {
+            errosReferencias.Add($"DOI {doi}: {ex.Message}");
+        }
+        catch (NotFoundException ex)
+        {
+            errosReferencias.Add($"DOI {doi}: {ex.Message}");
+        }
                 catch (Exception ex)
                 {
                     errosReferencias.Add($"DOI {doi}: Erro inesperado - {ex.Message}");
@@ -219,9 +235,9 @@ public class SubmissaoService
         {
             await _arquivoSubmissaoService.UploadAsync(submissao.Id, arquivo, cancellationToken);
         }
-        catch (ArgumentException ex)
+        catch (BadRequestException ex)
         {
-            throw new InvalidOperationException($"Submissão criada, mas falha ao fazer upload do arquivo: {ex.Message}", ex);
+            throw new BadRequestException($"Submissão criada, mas falha ao fazer upload do arquivo: {ex.Message}");
         }
 
         // 4. Buscar submissão completa com relacionamentos

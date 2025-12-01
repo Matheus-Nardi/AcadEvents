@@ -2,6 +2,7 @@ using AcadEvents.Dtos;
 using AcadEvents.Models;
 using AcadEvents.Repositories;
 using Microsoft.Extensions.Logging;
+using AcadEvents.Exceptions;
 
 namespace AcadEvents.Services;
 
@@ -34,14 +35,14 @@ public class ReferenciaService
     {
         if (string.IsNullOrWhiteSpace(doi))
         {
-            throw new ArgumentException("DOI não pode ser nulo ou vazio.", nameof(doi));
+            throw new BadRequestException("DOI não pode ser nulo ou vazio.");
         }
 
         // Validar que a Submissão existe e é válida
         var submissao = await _submissaoRepository.FindByIdAsync(submissaoId, cancellationToken);
         if (submissao == null)
         {
-            throw new ArgumentException($"Submissão com Id {submissaoId} não encontrada.", nameof(submissaoId));
+            throw new NotFoundException("Submissão", submissaoId);
         }
 
         _logger.LogInformation("Criando referência a partir do DOI: {DOI}", doi);
@@ -51,7 +52,7 @@ public class ReferenciaService
         if (work == null)
         {
             _logger.LogWarning("DOI {DOI} não encontrado no Crossref ou inválido.", doi);
-            throw new ArgumentException($"DOI {doi} não encontrado no Crossref ou inválido.");
+            throw new NotFoundException($"DOI {doi} não encontrado no Crossref ou inválido.");
         }
 
         // 2. Verificar se DOI já existe, senão criar
@@ -105,9 +106,12 @@ public class ReferenciaService
         return await _referenciaRepository.FindBySubmissaoIdAsync(submissaoId, cancellationToken);
     }
 
-    public async Task<Referencia?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<Referencia> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _referenciaRepository.FindByIdWithDOIAsync(id, cancellationToken);
+        var referencia = await _referenciaRepository.FindByIdWithDOIAsync(id, cancellationToken);
+        if (referencia == null)
+            throw new NotFoundException("Referência", id);
+        return referencia;
     }
 
     private static int ExtractYear(string? publishedPrint, string? publishedOnline)

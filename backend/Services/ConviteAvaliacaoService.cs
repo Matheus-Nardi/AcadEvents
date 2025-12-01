@@ -1,6 +1,7 @@
 using AcadEvents.Models;
 using AcadEvents.Repositories;
 using AcadEvents.Dtos;
+using AcadEvents.Exceptions;
 
 namespace AcadEvents.Services;
 
@@ -29,9 +30,12 @@ public class ConviteAvaliacaoService
         _avaliadorRepository = avaliadorRepository;
     }
 
-    public async Task<ConviteAvaliacao?> FindByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<ConviteAvaliacao> FindByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _repository.FindByIdWithRelacionamentosAsync(id, cancellationToken);
+        var convite = await _repository.FindByIdWithRelacionamentosAsync(id, cancellationToken);
+        if (convite == null)
+            throw new NotFoundException("Convite de Avaliação", id);
+        return convite;
     }
 
     public async Task<List<ConviteAvaliacao>> FindAllAsync(CancellationToken cancellationToken = default)
@@ -60,12 +64,12 @@ public class ConviteAvaliacaoService
         var submissao = await _submissaoRepository.FindByIdWithEventoAsync(request.SubmissaoId, cancellationToken);
         if (submissao == null)
         {
-            throw new ArgumentException($"Submissão {request.SubmissaoId} não existe.");
+            throw new NotFoundException("Submissão", request.SubmissaoId);
         }
 
         if (submissao.Evento == null)
         {
-            throw new ArgumentException($"A submissão {request.SubmissaoId} não está associada a um evento.");
+            throw new BadRequestException($"A submissão {request.SubmissaoId} não está associada a um evento.");
         }
 
         var eventoId = submissao.EventoId;
@@ -74,18 +78,18 @@ public class ConviteAvaliacaoService
         var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);
         if (evento == null)
         {
-            throw new ArgumentException($"Evento {eventoId} não encontrado.");
+            throw new NotFoundException("Evento", eventoId);
         }
 
         var organizador = await _organizadorRepository.FindByIdAsync(organizadorId, cancellationToken);
         if (organizador == null)
         {
-            throw new ArgumentException($"Organizador {organizadorId} não existe.");
+            throw new NotFoundException("Organizador", organizadorId);
         }
 
         if (!evento.Organizadores.Contains(organizador))
         {
-            throw new ArgumentException($"O organizador {organizadorId} não é organizador do evento {eventoId} relacionado à submissão.");
+            throw new ForbiddenException($"O organizador {organizadorId} não é organizador do evento {eventoId} relacionado à submissão.");
         }
 
         // Obter os avaliadores do comitê científico do evento
@@ -103,12 +107,12 @@ public class ConviteAvaliacaoService
                 var avaliador = await _avaliadorRepository.FindByIdAsync(avaliadorId, cancellationToken);
                 if (avaliador == null)
                 {
-                    throw new ArgumentException($"Avaliador {avaliadorId} não existe.");
+                    throw new NotFoundException("Avaliador", avaliadorId);
                 }
 
                 if (!avaliadoresIdsDoComite.Contains(avaliadorId))
                 {
-                    throw new ArgumentException($"O avaliador {avaliadorId} não faz parte do comitê científico do evento {eventoId}.");
+                    throw new ForbiddenException($"O avaliador {avaliadorId} não faz parte do comitê científico do evento {eventoId}.");
                 }
 
                 // Verificar se já existe um convite para este avaliador e submissão
@@ -128,7 +132,7 @@ public class ConviteAvaliacaoService
             
             if (!avaliadoresParaConvidar.Any())
             {
-                throw new ArgumentException($"Não existem avaliadores no comitê científico do evento {eventoId}.");
+                throw new BadRequestException($"Não existem avaliadores no comitê científico do evento {eventoId}.");
             }
 
             // Filtrar apenas aqueles que ainda não receberam convite para esta submissão
@@ -145,7 +149,7 @@ public class ConviteAvaliacaoService
 
             if (!avaliadoresParaConvidar.Any())
             {
-                throw new ArgumentException($"Todos os avaliadores do comitê científico já receberam convite para esta submissão.");
+                throw new ConflictException($"Todos os avaliadores do comitê científico já receberam convite para esta submissão.");
             }
         }
 
@@ -178,14 +182,20 @@ public class ConviteAvaliacaoService
         return convitesCompletos;
     }
 
-    public async Task<ConviteAvaliacao?> AceitarConviteAsync(long conviteId, long avaliadorId, CancellationToken cancellationToken = default)
+    public async Task<ConviteAvaliacao> AceitarConviteAsync(long conviteId, long avaliadorId, CancellationToken cancellationToken = default)
     {
-        return await _repository.AceitarConviteAsync(conviteId, avaliadorId, cancellationToken);
+        var convite = await _repository.AceitarConviteAsync(conviteId, avaliadorId, cancellationToken);
+        if (convite == null)
+            throw new BadRequestException("Convite não encontrado ou já foi respondido.");
+        return convite;
     }
 
-    public async Task<ConviteAvaliacao?> RecusarConviteAsync(long conviteId, long avaliadorId, string motivoRecusa, CancellationToken cancellationToken = default)
+    public async Task<ConviteAvaliacao> RecusarConviteAsync(long conviteId, long avaliadorId, string motivoRecusa, CancellationToken cancellationToken = default)
     {
-        return await _repository.RecusarConviteAsync(conviteId, avaliadorId, motivoRecusa, cancellationToken);
+        var convite = await _repository.RecusarConviteAsync(conviteId, avaliadorId, motivoRecusa, cancellationToken);
+        if (convite == null)
+            throw new BadRequestException("Convite não encontrado ou já foi respondido.");
+        return convite;
     }
 
     public async Task<List<ConviteAvaliacao>> FindByAvaliadorComFiltroAsync(long avaliadorId, StatusConvite status, CancellationToken cancellationToken = default)

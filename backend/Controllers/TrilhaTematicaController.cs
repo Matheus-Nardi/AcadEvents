@@ -28,9 +28,6 @@ public class TrilhaTematicaController : ControllerBase
     public async Task<ActionResult<TrilhaTematicaResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
     {
         var trilhaTematica = await _trilhaTematicaService.GetByIdAsync(id, cancellationToken);
-        if (trilhaTematica == null)
-            return NotFound($"Trilha Temática com Id {id} não encontrada.");
-
         return Ok(TrilhaTematicaResponseDTO.ValueOf(trilhaTematica));
     }
 
@@ -40,15 +37,8 @@ public class TrilhaTematicaController : ControllerBase
         [FromBody] TrilhaTematicaRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var trilhaTematica = await _trilhaTematicaService.CreateAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = trilhaTematica.Id }, TrilhaTematicaResponseDTO.ValueOf(trilhaTematica));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var trilhaTematica = await _trilhaTematicaService.CreateAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = trilhaTematica.Id }, TrilhaTematicaResponseDTO.ValueOf(trilhaTematica));
     }
 
     [HttpPost("{trilhaTematicaId}/trilha/{trilhaId}")]
@@ -58,15 +48,8 @@ public class TrilhaTematicaController : ControllerBase
         long trilhaId,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var trilhaTematica = await _trilhaTematicaService.AssociateToTrilhaAsync(trilhaTematicaId, trilhaId, cancellationToken);
-            return Ok(TrilhaTematicaResponseDTO.ValueOf(trilhaTematica));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var trilhaTematica = await _trilhaTematicaService.AssociateToTrilhaAsync(trilhaTematicaId, trilhaId, cancellationToken);
+        return Ok(TrilhaTematicaResponseDTO.ValueOf(trilhaTematica));
     }
 
     [HttpPut("{id}")]
@@ -76,28 +59,15 @@ public class TrilhaTematicaController : ControllerBase
         [FromBody] TrilhaTematicaRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var trilhaTematica = await _trilhaTematicaService.UpdateAsync(id, request, cancellationToken);
-            if (trilhaTematica == null)
-                return NotFound($"Trilha Temática com Id {id} não encontrada.");
-
-            return NoContent();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _trilhaTematicaService.UpdateAsync(id, request, cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Organizador")]
     public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken = default)
     {
-        var deletado = await _trilhaTematicaService.DeleteAsync(id, cancellationToken);
-        if (!deletado)
-            return NotFound($"Trilha Temática com Id {id} não encontrada.");
-
+        await _trilhaTematicaService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }

@@ -3,6 +3,7 @@ using AcadEvents.Models;
 using AcadEvents.Repositories;
 using AcadEvents.Services;
 using AcadEvents.Services.EmailTemplates;
+using AcadEvents.Exceptions;
 namespace AcadEvents.Services;
 
 public class AvaliadorService
@@ -29,14 +30,20 @@ public class AvaliadorService
         return await _avaliadorRepository.FindAllAsync(cancellationToken);
     }
 
-    public async Task<Avaliador?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<Avaliador> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _avaliadorRepository.FindByIdAsync(id, cancellationToken);
+        var avaliador = await _avaliadorRepository.FindByIdAsync(id, cancellationToken);
+        if (avaliador == null)
+            throw new NotFoundException("Avaliador", id);
+        return avaliador;
     }
 
-    public async Task<Avaliador?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    public async Task<Avaliador> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        return await _avaliadorRepository.FindByEmailAsync(email, cancellationToken);
+        var avaliador = await _avaliadorRepository.FindByEmailAsync(email, cancellationToken);
+        if (avaliador == null)
+            throw new NotFoundException($"Avaliador com email {email} não encontrado.");
+        return avaliador;
     }
 
     public async Task<Avaliador> CreateAsync(AvaliadorRequestDTO request, CancellationToken cancellationToken = default)
@@ -46,7 +53,7 @@ public class AvaliadorService
         {
             var perfil = await _perfilORCIDRepository.FindByIdAsync(request.PerfilORCIDId.Value, cancellationToken);
             if (perfil == null)
-                throw new ArgumentException($"Perfil ORCID com Id {request.PerfilORCIDId.Value} não encontrado.");
+                throw new NotFoundException("Perfil ORCID", request.PerfilORCIDId.Value);
         }
 
         var avaliador = new Avaliador
@@ -85,18 +92,18 @@ public class AvaliadorService
         return avaliadorCriado;
     }
 
-    public async Task<Avaliador?> UpdateAsync(long id, AvaliadorRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<Avaliador> UpdateAsync(long id, AvaliadorRequestDTO request, CancellationToken cancellationToken = default)
     {
         var avaliador = await _avaliadorRepository.FindByIdAsync(id, cancellationToken);
         if (avaliador == null)
-            return null;
+            throw new NotFoundException("Avaliador", id);
 
         // Verificar se o PerfilORCID existe (se fornecido)
         if (request.PerfilORCIDId.HasValue)
         {
             var perfil = await _perfilORCIDRepository.FindByIdAsync(request.PerfilORCIDId.Value, cancellationToken);
             if (perfil == null)
-                throw new ArgumentException($"Perfil ORCID com Id {request.PerfilORCIDId.Value} não encontrado.");
+                throw new NotFoundException("Perfil ORCID", request.PerfilORCIDId.Value);
         }
 
         avaliador.Nome = request.Nome;
@@ -112,9 +119,13 @@ public class AvaliadorService
         return await _avaliadorRepository.UpdateAsync(avaliador, cancellationToken);
     }
 
-    public async Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _avaliadorRepository.DeleteAsync(id, cancellationToken);
+        var avaliador = await _avaliadorRepository.FindByIdAsync(id, cancellationToken);
+        if (avaliador == null)
+            throw new NotFoundException("Avaliador", id);
+            
+        await _avaliadorRepository.DeleteAsync(id, cancellationToken);
     }
 }
 

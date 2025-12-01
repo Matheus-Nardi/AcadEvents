@@ -32,10 +32,7 @@ public class AvaliacaoController : ControllerBase
     public async Task<ActionResult<AvaliacaoResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
     {
         var avaliacao = await service.FindByIdAsync(id, cancellationToken);
-        
-        return avaliacao is null
-            ? NotFound()
-            : Ok(AvaliacaoResponseDTO.ValueOf(avaliacao));
+        return Ok(AvaliacaoResponseDTO.ValueOf(avaliacao));
     }
 
     [HttpGet]
@@ -65,17 +62,9 @@ public class AvaliacaoController : ControllerBase
             return Unauthorized(new { message = "Token inválido" });
         }
 
-        try
-        {
-            var avaliacao = await service.CreateAsync(request, avaliadorId, cancellationToken);
-            var response = AvaliacaoResponseDTO.ValueOf(avaliacao);
-            return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
-        }
-        catch (ArgumentException ex)
-        {
-            logger.LogWarning(ex, "Erro ao criar avaliação para avaliador {AvaliadorId}", avaliadorId);
-            return BadRequest(ex.Message);
-        }
+        var avaliacao = await service.CreateAsync(request, avaliadorId, cancellationToken);
+        var response = AvaliacaoResponseDTO.ValueOf(avaliacao);
+        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
     }
 
     [HttpGet("avaliador/{avaliadorId}")]

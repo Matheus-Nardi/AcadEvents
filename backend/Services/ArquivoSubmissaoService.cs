@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System.IO;
+using AcadEvents.Exceptions;
 
 namespace AcadEvents.Services;
 
@@ -36,18 +37,18 @@ public class ArquivoSubmissaoService
     {
         if (arquivo == null || arquivo.Length == 0)
         {
-            throw new ArgumentException("Arquivo inválido ou vazio.", nameof(arquivo));
+            throw new BadRequestException("Arquivo inválido ou vazio.");
         }
 
         if(arquivo.ContentType != "application/pdf")
         {
-            throw new ArgumentException("Tipo de arquivo não permitido. Apenas PDF é aceito.", nameof(arquivo));
+            throw new BadRequestException("Tipo de arquivo não permitido. Apenas PDF é aceito.");
         }
 
         var submissao = await _submissaoRepository.FindByIdAsync(submissaoId, cancellationToken);
         if (submissao == null)
         {
-            throw new ArgumentException($"Submissão com ID {submissaoId} não encontrada.", nameof(submissaoId));
+            throw new NotFoundException("Submissão", submissaoId);
         }
 
         Directory.CreateDirectory(_storagePath);
@@ -61,7 +62,7 @@ public class ArquivoSubmissaoService
 
         if(extensao != ".pdf")
         {
-            throw new ArgumentException("Extensão de arquivo não permitida. Apenas PDF é aceito.", nameof(arquivo));
+            throw new BadRequestException("Extensão de arquivo não permitida. Apenas PDF é aceito.");
         }
 
         _logger.LogInformation("Salvando arquivo de submissão {NomeArquivo} em {Caminho}", nomeOriginal, caminhoCompleto);

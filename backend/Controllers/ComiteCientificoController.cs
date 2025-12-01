@@ -34,9 +34,6 @@ namespace AcadEvents.Controllers
         public async Task<ActionResult<ComiteCientificoResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
         {
             var comite = await _comiteCientificoService.GetByIdAsync(id, cancellationToken);
-            if (comite == null)
-                return NotFound($"Comitê Científico com Id {id} não encontrado.");
-
             return Ok(ComiteCientificoResponseDTO.ValueOf(comite));
         }
 
@@ -60,16 +57,8 @@ namespace AcadEvents.Controllers
                 return Unauthorized(new { message = "Token inválido" });
             }
 
-            try
-            {
-                var comite = await _comiteCientificoService.CreateAsync(eventoId, organizadorId, request, cancellationToken);
-                return CreatedAtAction(nameof(GetById), new { id = comite.Id }, ComiteCientificoResponseDTO.ValueOf(comite));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Erro ao criar comitê científico para evento {EventoId}", eventoId);
-                return BadRequest(ex.Message);
-            }
+            var comite = await _comiteCientificoService.CreateAsync(eventoId, organizadorId, request, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { id = comite.Id }, ComiteCientificoResponseDTO.ValueOf(comite));
         }
 
         [HttpPut("{id}")]
@@ -78,27 +67,14 @@ namespace AcadEvents.Controllers
             [FromBody] ComiteCientificoRequestDTO request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var comite = await _comiteCientificoService.UpdateAsync(id, request, cancellationToken);
-                if (comite == null)
-                    return NotFound($"Comitê Científico com Id {id} não encontrado.");
-
-                return NoContent();
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await _comiteCientificoService.UpdateAsync(id, request, cancellationToken);
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken = default)
         {
-            var deletado = await _comiteCientificoService.DeleteAsync(id, cancellationToken);
-            if (!deletado)
-                return NotFound($"Comitê Científico com Id {id} não encontrado.");
-
+            await _comiteCientificoService.DeleteAsync(id, cancellationToken);
             return NoContent();
         }
 
@@ -109,15 +85,8 @@ namespace AcadEvents.Controllers
             string emailAvaliador,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var comite = await _comiteCientificoService.AddAvaliadorAsync(comiteId, emailAvaliador, cancellationToken);
-                return Ok(ComiteCientificoResponseDTO.ValueOf(comite));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var comite = await _comiteCientificoService.AddAvaliadorAsync(comiteId, emailAvaliador, cancellationToken);
+            return Ok(ComiteCientificoResponseDTO.ValueOf(comite));
         }
 
         [HttpDelete("{comiteId}/avaliadores/{avaliadorId}")]
@@ -126,15 +95,8 @@ namespace AcadEvents.Controllers
             long avaliadorId,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var comite = await _comiteCientificoService.RemoveAvaliadorAsync(comiteId, avaliadorId, cancellationToken);
-                return Ok(ComiteCientificoResponseDTO.ValueOf(comite));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var comite = await _comiteCientificoService.RemoveAvaliadorAsync(comiteId, avaliadorId, cancellationToken);
+            return Ok(ComiteCientificoResponseDTO.ValueOf(comite));
         }
 
         [HttpPost("{comiteId}/coordenadores/{emailOrganizador}")]
@@ -157,16 +119,8 @@ namespace AcadEvents.Controllers
                 return Unauthorized(new { message = "Token inválido" });
             }
 
-            try
-            {
-                var comite = await _comiteCientificoService.AddCoordenadorAsync(comiteId, emailOrganizador, cancellationToken);
-                return Ok(ComiteCientificoResponseDTO.ValueOf(comite));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Erro ao adicionar coordenador {EmailOrganizador} ao comitê {ComiteId}", emailOrganizador, comiteId);
-                return BadRequest(ex.Message);
-            }
+            var comite = await _comiteCientificoService.AddCoordenadorAsync(comiteId, emailOrganizador, cancellationToken);
+            return Ok(ComiteCientificoResponseDTO.ValueOf(comite));
         }
 
         [HttpDelete("{comiteId}/coordenadores/{organizadorId}")]
@@ -189,16 +143,8 @@ namespace AcadEvents.Controllers
                 return Unauthorized(new { message = "Token inválido" });
             }
 
-            try
-            {
-                var comite = await _comiteCientificoService.RemoveCoordenadorAsync(comiteId, organizadorId, cancellationToken);
-                return Ok(ComiteCientificoResponseDTO.ValueOf(comite));
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Erro ao remover coordenador {OrganizadorId} do comitê {ComiteId}", organizadorId, comiteId);
-                return BadRequest(ex.Message);
-            }
+            var comite = await _comiteCientificoService.RemoveCoordenadorAsync(comiteId, organizadorId, cancellationToken);
+            return Ok(ComiteCientificoResponseDTO.ValueOf(comite));
         }
     }
 }

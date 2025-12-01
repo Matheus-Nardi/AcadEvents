@@ -2,6 +2,7 @@ using AcadEvents.Dtos;
 using AcadEvents.Models;
 using AcadEvents.Repositories;
 using AcadEvents.Services.EmailTemplates;
+using AcadEvents.Exceptions;
 
 namespace AcadEvents.Services;
 
@@ -38,9 +39,12 @@ public class ComiteCientificoService
         return await _comiteCientificoRepository.FindAllWithRelacionamentosAsync(cancellationToken);
     }
 
-    public async Task<ComiteCientifico?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<ComiteCientifico> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _comiteCientificoRepository.FindByIdWithRelacionamentosAsync(id, cancellationToken);
+        var comite = await _comiteCientificoRepository.FindByIdWithRelacionamentosAsync(id, cancellationToken);
+        if (comite == null)
+            throw new NotFoundException("Comitê Científico", id);
+        return comite;
     }
 
     public async Task<ComiteCientifico> CreateAsync(long eventoId, long organizadorId, ComiteCientificoRequestDTO request, CancellationToken cancellationToken = default)
@@ -48,15 +52,15 @@ public class ComiteCientificoService
         // Verificar se o evento existe
         var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);
         if (evento == null)
-            throw new ArgumentException($"Evento com Id {eventoId} não encontrado.");
+            throw new NotFoundException("Evento", eventoId);
 
         // Verificar se o organizador existe e é organizador do evento
         var organizador = await _organizadorRepository.FindByIdAsync(organizadorId, cancellationToken);
         if (organizador == null)
-            throw new ArgumentException($"Organizador com Id {organizadorId} não encontrado.");
+            throw new NotFoundException("Organizador", organizadorId);
 
         if (!evento.Organizadores.Contains(organizador))
-            throw new ArgumentException($"O organizador com Id {organizadorId} não é organizador do evento com Id {eventoId}.");
+            throw new ForbiddenException($"O organizador com Id {organizadorId} não é organizador do evento com Id {eventoId}.");
 
         // Validar avaliadores se fornecidos
         var avaliadores = new List<Avaliador>();
@@ -66,7 +70,7 @@ public class ComiteCientificoService
             {
                 var avaliador = await _avaliadorRepository.FindByIdAsync(avaliadorId, cancellationToken);
                 if (avaliador == null)
-                    throw new ArgumentException($"Avaliador com Id {avaliadorId} não encontrado.");
+                    throw new NotFoundException("Avaliador", avaliadorId);
 
                 avaliadores.Add(avaliador);
             }
@@ -83,7 +87,7 @@ public class ComiteCientificoService
 
                 var coordenador = await _organizadorRepository.FindByIdAsync(coordenadorId, cancellationToken);
                 if (coordenador == null)
-                    throw new ArgumentException($"Organizador coordenador com Id {coordenadorId} não encontrado.");
+                    throw new NotFoundException("Organizador", coordenadorId);
 
                 coordenadores.Add(coordenador);
             }
@@ -136,11 +140,11 @@ public class ComiteCientificoService
         return comiteCompleto!;
     }
 
-    public async Task<ComiteCientifico?> UpdateAsync(long id, ComiteCientificoRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<ComiteCientifico> UpdateAsync(long id, ComiteCientificoRequestDTO request, CancellationToken cancellationToken = default)
     {
         var comite = await _comiteCientificoRepository.FindByIdWithRelacionamentosAsync(id, cancellationToken);
         if (comite == null)
-            return null;
+            throw new NotFoundException("Comitê Científico", id);
 
         // Atualizar propriedades básicas
         comite.Nome = request.Nome;
@@ -155,7 +159,7 @@ public class ComiteCientificoService
             {
                 var avaliador = await _avaliadorRepository.FindByIdAsync(avaliadorId, cancellationToken);
                 if (avaliador == null)
-                    throw new ArgumentException($"Avaliador com Id {avaliadorId} não encontrado.");
+                    throw new NotFoundException("Avaliador", avaliadorId);
 
                 avaliadores.Add(avaliador);
             }
@@ -170,7 +174,7 @@ public class ComiteCientificoService
             {
                 var coordenador = await _organizadorRepository.FindByIdAsync(coordenadorId, cancellationToken);
                 if (coordenador == null)
-                    throw new ArgumentException($"Organizador coordenador com Id {coordenadorId} não encontrado.");
+                    throw new NotFoundException("Organizador", coordenadorId);
 
                 coordenadores.Add(coordenador);
             }
@@ -183,9 +187,13 @@ public class ComiteCientificoService
         return comiteCompleto;
     }
 
-    public async Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _comiteCientificoRepository.DeleteAsync(id, cancellationToken);
+        var comite = await _comiteCientificoRepository.FindByIdAsync(id, cancellationToken);
+        if (comite == null)
+            throw new NotFoundException("Comitê Científico", id);
+            
+        await _comiteCientificoRepository.DeleteAsync(id, cancellationToken);
     }
 
     public async Task<ComiteCientifico> AddAvaliadorAsync(long comiteId, string emailAvaliador, CancellationToken cancellationToken = default)
@@ -193,17 +201,17 @@ public class ComiteCientificoService
         // Buscar avaliador por email
         var avaliador = await _avaliadorRepository.FindByEmailAsync(emailAvaliador, cancellationToken);
         if (avaliador == null)
-            throw new ArgumentException($"Avaliador com email {emailAvaliador} não encontrado.");
+            throw new NotFoundException($"Avaliador com email {emailAvaliador} não encontrado.");
 
         // Buscar comitê para validar se já está adicionado
         var comite = await _comiteCientificoRepository.FindByIdWithRelacionamentosAsync(comiteId, cancellationToken);
         if (comite == null)
-            throw new ArgumentException($"Comitê Científico com Id {comiteId} não encontrado.");
+            throw new NotFoundException("Comitê Científico", comiteId);
 
         // Validar se o avaliador já está no comitê
         if (comite.MembrosAvaliadores.Any(a => a.Id == avaliador.Id))
         {
-            throw new ArgumentException($"O avaliador com email {emailAvaliador} já está adicionado ao comitê.");
+            throw new ConflictException($"O avaliador com email {emailAvaliador} já está adicionado ao comitê.");
         }
 
         // Adicionar avaliador
@@ -273,17 +281,17 @@ public class ComiteCientificoService
         // Buscar organizador por email
         var organizador = await _organizadorRepository.FindByEmailAsync(emailOrganizador, cancellationToken);
         if (organizador == null)
-            throw new ArgumentException($"Organizador com email {emailOrganizador} não encontrado.");
+            throw new NotFoundException($"Organizador com email {emailOrganizador} não encontrado.");
 
         // Buscar comitê para validar se já está adicionado
         var comite = await _comiteCientificoRepository.FindByIdWithRelacionamentosAsync(comiteId, cancellationToken);
         if (comite == null)
-            throw new ArgumentException($"Comitê Científico com Id {comiteId} não encontrado.");
+            throw new NotFoundException("Comitê Científico", comiteId);
 
         // Validar se o organizador já está no comitê
         if (comite.Coordenadores.Any(o => o.Id == organizador.Id))
         {
-            throw new ArgumentException($"O organizador com email {emailOrganizador} já está adicionado ao comitê.");
+            throw new ConflictException($"O organizador com email {emailOrganizador} já está adicionado ao comitê.");
         }
 
         // Adicionar coordenador

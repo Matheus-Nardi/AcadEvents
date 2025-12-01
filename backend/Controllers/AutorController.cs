@@ -27,9 +27,6 @@ namespace AcadEvents.Controllers
         public async Task<ActionResult<AutorResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
         {
             var autor = await _autorService.GetByIdAsync(id, cancellationToken);
-            if (autor == null)
-                return NotFound($"Autor com Id {id} não encontrado.");
-
             return Ok(AutorResponseDTO.ValueOf(autor));
         }
 
@@ -38,15 +35,8 @@ namespace AcadEvents.Controllers
             [FromBody] AutorRequestDTO request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var autor = await _autorService.CreateAsync(request, cancellationToken);
-                return CreatedAtAction(nameof(GetById), new { id = autor.Id }, AutorResponseDTO.ValueOf(autor));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var autor = await _autorService.CreateAsync(request, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { id = autor.Id }, AutorResponseDTO.ValueOf(autor));
         }
 
         [HttpPut("{id}")]
@@ -55,27 +45,14 @@ namespace AcadEvents.Controllers
             [FromBody] AutorRequestDTO request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var autor = await _autorService.UpdateAsync(id, request, cancellationToken);
-                if (autor == null)
-                    return NotFound($"Autor com Id {id} não encontrado.");
-
-                return NoContent();
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await _autorService.UpdateAsync(id, request, cancellationToken);
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken = default)
         {
-            var deletado = await _autorService.DeleteAsync(id, cancellationToken);
-            if (!deletado)
-                return NotFound($"Autor com Id {id} não encontrado.");
-
+            await _autorService.DeleteAsync(id, cancellationToken);
             return NoContent();
         }
     }

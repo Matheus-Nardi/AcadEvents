@@ -3,6 +3,7 @@ using AcadEvents.Models;
 using AcadEvents.Repositories;
 using AcadEvents.Services;
 using AcadEvents.Services.EmailTemplates;
+using AcadEvents.Exceptions;
 namespace AcadEvents.Services;
 
 public class AutorService
@@ -29,9 +30,12 @@ public class AutorService
         return await _autorRepository.FindAllAsync(cancellationToken);
     }
 
-    public async Task<Autor?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<Autor> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _autorRepository.FindByIdAsync(id, cancellationToken);
+        var autor = await _autorRepository.FindByIdAsync(id, cancellationToken);
+        if (autor == null)
+            throw new NotFoundException("Autor", id);
+        return autor;
     }
 
     public async Task<Autor> CreateAsync(AutorRequestDTO request, CancellationToken cancellationToken = default)
@@ -41,7 +45,7 @@ public class AutorService
         {
             var perfil = await _perfilORCIDRepository.FindByIdAsync(request.PerfilORCIDId.Value, cancellationToken);
             if (perfil == null)
-                throw new ArgumentException($"Perfil ORCID com Id {request.PerfilORCIDId.Value} não encontrado.");
+                throw new NotFoundException("Perfil ORCID", request.PerfilORCIDId.Value);
         }
 
         var autor = new Autor
@@ -80,18 +84,18 @@ public class AutorService
         return autorCriado;
     }
 
-    public async Task<Autor?> UpdateAsync(long id, AutorRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<Autor> UpdateAsync(long id, AutorRequestDTO request, CancellationToken cancellationToken = default)
     {
         var autor = await _autorRepository.FindByIdAsync(id, cancellationToken);
         if (autor == null)
-            return null;
+            throw new NotFoundException("Autor", id);
 
         // Verificar se o PerfilORCID existe (se fornecido)
         if (request.PerfilORCIDId.HasValue)
         {
             var perfil = await _perfilORCIDRepository.FindByIdAsync(request.PerfilORCIDId.Value, cancellationToken);
             if (perfil == null)
-                throw new ArgumentException($"Perfil ORCID com Id {request.PerfilORCIDId.Value} não encontrado.");
+                throw new NotFoundException("Perfil ORCID", request.PerfilORCIDId.Value);
         }
 
         autor.Nome = request.Nome;
@@ -107,9 +111,13 @@ public class AutorService
         return await _autorRepository.UpdateAsync(autor, cancellationToken);
     }
 
-    public async Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _autorRepository.DeleteAsync(id, cancellationToken);
+        var autor = await _autorRepository.FindByIdAsync(id, cancellationToken);
+        if (autor == null)
+            throw new NotFoundException("Autor", id);
+            
+        await _autorRepository.DeleteAsync(id, cancellationToken);
     }
 }
 

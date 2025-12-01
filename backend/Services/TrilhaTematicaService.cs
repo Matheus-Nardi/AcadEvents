@@ -1,6 +1,7 @@
 using AcadEvents.Dtos;
 using AcadEvents.Models;
 using AcadEvents.Repositories;
+using AcadEvents.Exceptions;
 
 namespace AcadEvents.Services;
 
@@ -22,9 +23,12 @@ public class TrilhaTematicaService
         return await _trilhaTematicaRepository.FindAllAsync(cancellationToken);
     }
 
-    public async Task<TrilhaTematica?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<TrilhaTematica> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _trilhaTematicaRepository.FindByIdAsync(id, cancellationToken);
+        var trilhaTematica = await _trilhaTematicaRepository.FindByIdAsync(id, cancellationToken);
+        if (trilhaTematica == null)
+            throw new NotFoundException("Trilha Temática", id);
+        return trilhaTematica;
     }
 
     public async Task<List<TrilhaTematica>> GetByTrilhaIdAsync(long trilhaId, CancellationToken cancellationToken = default)
@@ -32,7 +36,7 @@ public class TrilhaTematicaService
         // Verificar se a trilha existe
         var trilha = await _trilhaRepository.FindByIdAsync(trilhaId, cancellationToken);
         if (trilha == null)
-            throw new ArgumentException($"Trilha com Id {trilhaId} não encontrada.");
+            throw new NotFoundException("Trilha", trilhaId);
 
         return await _trilhaTematicaRepository.FindByTrilhaIdAsync(trilhaId, cancellationToken);
     }
@@ -54,22 +58,22 @@ public class TrilhaTematicaService
     {
         var trilhaTematica = await _trilhaTematicaRepository.FindByIdAsync(trilhaTematicaId, cancellationToken);
         if (trilhaTematica == null)
-            throw new ArgumentException($"Trilha Temática com Id {trilhaTematicaId} não encontrada.");
+            throw new NotFoundException("Trilha Temática", trilhaTematicaId);
 
         // Verificar se a trilha existe
         var trilha = await _trilhaRepository.FindByIdAsync(trilhaId, cancellationToken);
         if (trilha == null)
-            throw new ArgumentException($"Trilha com Id {trilhaId} não encontrada.");
+            throw new NotFoundException("Trilha", trilhaId);
 
         trilhaTematica.TrilhaId = trilhaId;
         return await _trilhaTematicaRepository.UpdateAsync(trilhaTematica, cancellationToken);
     }
 
-    public async Task<TrilhaTematica?> UpdateAsync(long id, TrilhaTematicaRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<TrilhaTematica> UpdateAsync(long id, TrilhaTematicaRequestDTO request, CancellationToken cancellationToken = default)
     {
         var trilhaTematica = await _trilhaTematicaRepository.FindByIdAsync(id, cancellationToken);
         if (trilhaTematica == null)
-            return null;
+            throw new NotFoundException("Trilha Temática", id);
 
         trilhaTematica.Nome = request.Nome;
         trilhaTematica.Descricao = request.Descricao;
@@ -78,9 +82,13 @@ public class TrilhaTematicaService
         return await _trilhaTematicaRepository.UpdateAsync(trilhaTematica, cancellationToken);
     }
 
-    public async Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _trilhaTematicaRepository.DeleteAsync(id, cancellationToken);
+        var trilhaTematica = await _trilhaTematicaRepository.FindByIdAsync(id, cancellationToken);
+        if (trilhaTematica == null)
+            throw new NotFoundException("Trilha Temática", id);
+            
+        await _trilhaTematicaRepository.DeleteAsync(id, cancellationToken);
     }
 }
 

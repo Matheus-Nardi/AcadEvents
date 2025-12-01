@@ -3,6 +3,7 @@ using AcadEvents.Models;
 using AcadEvents.Repositories;
 using AcadEvents.Services;
 using AcadEvents.Services.EmailTemplates;
+using AcadEvents.Exceptions;
 namespace AcadEvents.Services;
 
 public class OrganizadorService
@@ -29,14 +30,20 @@ public class OrganizadorService
         return await _organizadorRepository.FindAllAsync(cancellationToken);
     }
 
-    public async Task<Organizador?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<Organizador> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _organizadorRepository.FindByIdAsync(id, cancellationToken);
+        var organizador = await _organizadorRepository.FindByIdAsync(id, cancellationToken);
+        if (organizador == null)
+            throw new NotFoundException("Organizador", id);
+        return organizador;
     }
 
-    public async Task<Organizador?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    public async Task<Organizador> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        return await _organizadorRepository.FindByEmailAsync(email, cancellationToken);
+        var organizador = await _organizadorRepository.FindByEmailAsync(email, cancellationToken);
+        if (organizador == null)
+            throw new NotFoundException($"Organizador com email {email} não encontrado.");
+        return organizador;
     }
 
     public async Task<Organizador> CreateAsync(OrganizadorRequestDTO request, CancellationToken cancellationToken = default)
@@ -46,7 +53,7 @@ public class OrganizadorService
         {
             var perfil = await _perfilORCIDRepository.FindByIdAsync(request.PerfilORCIDId.Value, cancellationToken);
             if (perfil == null)
-                throw new ArgumentException($"Perfil ORCID com Id {request.PerfilORCIDId.Value} não encontrado.");
+                throw new NotFoundException("Perfil ORCID", request.PerfilORCIDId.Value);
         }
 
         var organizador = new Organizador
@@ -84,18 +91,18 @@ public class OrganizadorService
         return organizadorCriado;
     }
 
-    public async Task<Organizador?> UpdateAsync(long id, OrganizadorRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<Organizador> UpdateAsync(long id, OrganizadorRequestDTO request, CancellationToken cancellationToken = default)
     {
         var organizador = await _organizadorRepository.FindByIdAsync(id, cancellationToken);
         if (organizador == null)
-            return null;
+            throw new NotFoundException("Organizador", id);
 
         // Verificar se o PerfilORCID existe (se fornecido)
         if (request.PerfilORCIDId.HasValue)
         {
             var perfil = await _perfilORCIDRepository.FindByIdAsync(request.PerfilORCIDId.Value, cancellationToken);
             if (perfil == null)
-                throw new ArgumentException($"Perfil ORCID com Id {request.PerfilORCIDId.Value} não encontrado.");
+                throw new NotFoundException("Perfil ORCID", request.PerfilORCIDId.Value);
         }
 
         organizador.Nome = request.Nome;
@@ -110,9 +117,13 @@ public class OrganizadorService
         return await _organizadorRepository.UpdateAsync(organizador, cancellationToken);
     }
 
-    public async Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _organizadorRepository.DeleteAsync(id, cancellationToken);
+        var organizador = await _organizadorRepository.FindByIdAsync(id, cancellationToken);
+        if (organizador == null)
+            throw new NotFoundException("Organizador", id);
+            
+        await _organizadorRepository.DeleteAsync(id, cancellationToken);
     }
 }
 

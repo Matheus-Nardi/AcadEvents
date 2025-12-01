@@ -26,11 +26,6 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
     public async Task<ActionResult<SubmissaoResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
     {
         var submissao = await submissaoService.GetByIdAsync(id, cancellationToken);
-        if (submissao is null)
-        {
-            return NotFound($"Submissão {id} não encontrada.");
-        }
-
         return Ok(SubmissaoResponseDTO.ValueOf(submissao));
     }
 
@@ -39,16 +34,9 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         long trilhaTematicaId,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var submissoes = await submissaoService.GetByTrilhaTematicaIdAsync(trilhaTematicaId, cancellationToken);
-            var response = submissoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
-            return Ok(response);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var submissoes = await submissaoService.GetByTrilhaTematicaIdAsync(trilhaTematicaId, cancellationToken);
+        var response = submissoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
+        return Ok(response);
     }
 
     [HttpGet("autor/minhas")]
@@ -56,26 +44,19 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
     public async Task<ActionResult<List<SubmissaoResponseDTO>>> GetMinhasSubmissoes(
         CancellationToken cancellationToken = default)
     {
-        try
+        // Extrair o ID do autor do token
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+            
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long autorId))
         {
-            // Extrair o ID do autor do token
-            var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
-                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub");
-                
-            if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long autorId))
-            {
-                return Unauthorized(new { message = "Token inválido: ID do autor não encontrado." });
-            }
+            return Unauthorized(new { message = "Token inválido: ID do autor não encontrado." });
+        }
 
-            var submissoes = await submissaoService.GetByAutorIdAsync(autorId, cancellationToken);
-            var response = submissoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
-            return Ok(response);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var submissoes = await submissaoService.GetByAutorIdAsync(autorId, cancellationToken);
+        var response = submissoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
+        return Ok(response);
     }
 
     [HttpGet("avaliador/minhas")]
@@ -83,26 +64,19 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
     public async Task<ActionResult<List<SubmissaoResponseDTO>>> GetSubmissoesParaAvaliador(
         CancellationToken cancellationToken = default)
     {
-        try
+        // Extrair o ID do avaliador do token
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+            
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long avaliadorId))
         {
-            // Extrair o ID do avaliador do token
-            var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
-                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub");
-                
-            if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long avaliadorId))
-            {
-                return Unauthorized(new { message = "Token inválido: ID do avaliador não encontrado." });
-            }
+            return Unauthorized(new { message = "Token inválido: ID do avaliador não encontrado." });
+        }
 
-            var submissoes = await submissaoService.GetForAvaliadorAvaliacaoAsync(avaliadorId, cancellationToken);
-            var response = submissoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
-            return Ok(response);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var submissoes = await submissaoService.GetForAvaliadorAvaliacaoAsync(avaliadorId, cancellationToken);
+        var response = submissoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
+        return Ok(response);
     }
 
     [HttpPost]
@@ -111,26 +85,19 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         [FromBody] SubmissaoRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        try
+        // Extrair o ID do autor do token
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+            
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long autorId))
         {
-            // Extrair o ID do autor do token
-            var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
-                ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue("sub");
-                
-            if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long autorId))
-            {
-                return Unauthorized(new { message = "Token inválido: ID do autor não encontrado." });
-            }
+            return Unauthorized(new { message = "Token inválido: ID do autor não encontrado." });
+        }
 
-            var submissao = await submissaoService.CreateAsync(request, autorId, cancellationToken);
-            var response = SubmissaoResponseDTO.ValueOf(submissao);
-            return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var submissao = await submissaoService.CreateAsync(request, autorId, cancellationToken);
+        var response = SubmissaoResponseDTO.ValueOf(submissao);
+        return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
     }
 
     [HttpPost("complete")]
@@ -224,21 +191,9 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
 
             return CreatedAtAction(nameof(GetById), new { id = resultado.Submissao.Id }, resultado.Submissao);
         }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return StatusCode(500, new { message = ex.Message });
-        }
         catch (Exception ex)
         {
-            return StatusCode(500, new 
-            { 
-                message = "Erro interno ao processar a criação completa da submissão.", 
-                error = ex.Message 
-            });
+            return StatusCode(500, new { message = "Erro interno ao processar a requisição.", error = ex.Message });
         }
     }
 
@@ -248,31 +203,14 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         [FromBody] SubmissaoRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var submissao = await submissaoService.UpdateAsync(id, request, cancellationToken);
-            if (submissao is null)
-            {
-                return NotFound($"Submissão {id} não encontrada.");
-            }
-
-            return Ok(SubmissaoResponseDTO.ValueOf(submissao));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var submissao = await submissaoService.UpdateAsync(id, request, cancellationToken);
+        return Ok(SubmissaoResponseDTO.ValueOf(submissao));
     }
 
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken = default)
     {
-        var deleted = await submissaoService.DeleteAsync(id, cancellationToken);
-        if (!deleted)
-        {
-            return NotFound($"Submissão {id} não encontrada.");
-        }
-
+        await submissaoService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }

@@ -47,26 +47,15 @@ public class EventoController : ControllerBase
             return Unauthorized(new { message = "Token inválido" });
         }
 
-        try
-        {
-            var eventos = await _eventoService.GetByOrganizadorIdAsync(organizadorId, cancellationToken);
-            var eventosDTO = eventos.Select(e => EventoResponseDTO.ValueOf(e)).ToList();
-            return Ok(eventosDTO);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Erro ao buscar eventos do organizador {OrganizadorId}", organizadorId);
-            return BadRequest(new { message = ex.Message });
-        }
+        var eventos = await _eventoService.GetByOrganizadorIdAsync(organizadorId, cancellationToken);
+        var eventosDTO = eventos.Select(e => EventoResponseDTO.ValueOf(e)).ToList();
+        return Ok(eventosDTO);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<EventoResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
     {
         var evento = await _eventoService.GetByIdAsync(id, cancellationToken);
-        if (evento == null)
-            return NotFound($"Evento com Id {id} não encontrado.");
-
         return Ok(EventoResponseDTO.ValueOf(evento));
     }
 
@@ -89,16 +78,8 @@ public class EventoController : ControllerBase
             return Unauthorized(new { message = "Token inválido" });
         }
 
-        try
-        {
-            var evento = await _eventoService.CreateAsync(organizadorId, request, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = evento.Id }, EventoResponseDTO.ValueOf(evento));
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Erro ao criar evento para organizador {OrganizadorId}", organizadorId);
-            return BadRequest(ex.Message);
-        }
+        var evento = await _eventoService.CreateAsync(organizadorId, request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = evento.Id }, EventoResponseDTO.ValueOf(evento));
     }
 
     [HttpPut("{id}")]
@@ -107,27 +88,14 @@ public class EventoController : ControllerBase
         [FromBody] EventoRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var evento = await _eventoService.UpdateAsync(id, request, cancellationToken);
-            if (evento == null)
-                return NotFound($"Evento com Id {id} não encontrado.");
-
-            return NoContent();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _eventoService.UpdateAsync(id, request, cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken = default)
     {
-        var deletado = await _eventoService.DeleteAsync(id, cancellationToken);
-        if (!deletado)
-            return NotFound($"Evento com Id {id} não encontrado.");
-
+        await _eventoService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 
@@ -151,16 +119,8 @@ public class EventoController : ControllerBase
             return Unauthorized(new { message = "Token inválido" });
         }
 
-        try
-        {
-            var evento = await _eventoService.AddOrganizadorAsync(eventoId, emailOrganizador, cancellationToken);
-            return Ok(EventoResponseDTO.ValueOf(evento));
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Erro ao adicionar organizador {EmailOrganizador} ao evento {EventoId}", emailOrganizador, eventoId);
-            return BadRequest(ex.Message);
-        }
+        var evento = await _eventoService.AddOrganizadorAsync(eventoId, emailOrganizador, cancellationToken);
+        return Ok(EventoResponseDTO.ValueOf(evento));
     }
 
     [HttpDelete("{eventoId}/organizadores/{organizadorId}")]
@@ -183,15 +143,7 @@ public class EventoController : ControllerBase
             return Unauthorized(new { message = "Token inválido" });
         }
 
-        try
-        {
-            var evento = await _eventoService.RemoveOrganizadorAsync(eventoId, organizadorId, cancellationToken);
-            return Ok(EventoResponseDTO.ValueOf(evento));
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Erro ao remover organizador {OrganizadorId} do evento {EventoId}", organizadorId, eventoId);
-            return BadRequest(ex.Message);
-        }
+        var evento = await _eventoService.RemoveOrganizadorAsync(eventoId, organizadorId, cancellationToken);
+        return Ok(EventoResponseDTO.ValueOf(evento));
     }
 }

@@ -28,12 +28,6 @@ public class ConviteAvaliacaoController : ControllerBase
     public async Task<ActionResult<ConviteAvaliacaoResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
     {
         var convite = await _service.FindByIdAsync(id, cancellationToken);
-        
-        if (convite == null)
-        {
-            return NotFound($"Convite com Id {id} não encontrado.");
-        }
-
         return Ok(ConviteAvaliacaoResponseDTO.ValueOf(convite));
     }
 
@@ -114,17 +108,9 @@ public class ConviteAvaliacaoController : ControllerBase
             return Unauthorized(new { message = "Token JWT inválido ou sem identificador de usuário." });
         }
 
-        try
-        {
-            var convites = await _service.CreateAsync(organizadorId, request, cancellationToken);
-            var response = convites.Select(ConviteAvaliacaoResponseDTO.ValueOf).ToList();
-            return CreatedAtAction(nameof(GetAll), response);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Erro ao criar convites de avaliação para organizador {OrganizadorId}", organizadorId);
-            return BadRequest(ex.Message);
-        }
+        var convites = await _service.CreateAsync(organizadorId, request, cancellationToken);
+        var response = convites.Select(ConviteAvaliacaoResponseDTO.ValueOf).ToList();
+        return CreatedAtAction(nameof(GetAll), response);
     }
 
     [HttpPost("{id}/aceitar")]
@@ -138,12 +124,6 @@ public class ConviteAvaliacaoController : ControllerBase
         }
 
         var convite = await _service.AceitarConviteAsync(id, avaliadorId, cancellationToken);
-        
-        if (convite == null)
-        {
-            return BadRequest("Convite não encontrado ou já foi respondido.");
-        }
-
         return Ok(ConviteAvaliacaoResponseDTO.ValueOf(convite));
     }
 
@@ -166,12 +146,6 @@ public class ConviteAvaliacaoController : ControllerBase
         }
 
         var convite = await _service.RecusarConviteAsync(id, avaliadorId, request.MotivoRecusa, cancellationToken);
-        
-        if (convite == null)
-        {
-            return BadRequest("Convite não encontrado ou já foi respondido.");
-        }
-
         return Ok(ConviteAvaliacaoResponseDTO.ValueOf(convite));
     }
 }

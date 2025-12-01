@@ -1,4 +1,5 @@
-﻿using AcadEvents.Repositories;
+﻿using AcadEvents.Handlers;
+using AcadEvents.Repositories;
 using AcadEvents.Services;
 using AcadEvents.Services.Jwt;
 
@@ -47,5 +48,9 @@ public static class InjectExt
         service.AddScoped<AuthService>();
         service.AddScoped<IEmailService, EmailService>();
         // CrossrefService é registrado via AddHttpClient no Program.cs
+
+        // Handlers
+        service.AddExceptionHandler<GlobalExceptionHandler>();
+        service.AddProblemDetails();
     }
 }

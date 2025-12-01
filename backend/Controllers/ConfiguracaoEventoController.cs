@@ -28,9 +28,6 @@ public class ConfiguracaoEventoController : ControllerBase
     public async Task<ActionResult<ConfiguracaoEventoResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
     {
         var configuracao = await _configuracaoEventoService.GetByIdAsync(id, cancellationToken);
-        if (configuracao == null)
-            return NotFound($"Configuração de Evento com Id {id} não encontrada.");
-
         return Ok(ConfiguracaoEventoResponseDTO.ValueOf(configuracao));
     }
 
@@ -40,15 +37,8 @@ public class ConfiguracaoEventoController : ControllerBase
         [FromBody] ConfiguracaoEventoRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var configuracao = await _configuracaoEventoService.CreateAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = configuracao.Id }, ConfiguracaoEventoResponseDTO.ValueOf(configuracao));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var configuracao = await _configuracaoEventoService.CreateAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = configuracao.Id }, ConfiguracaoEventoResponseDTO.ValueOf(configuracao));
     }
 
     [HttpPost("evento/{eventoId}")]
@@ -58,15 +48,8 @@ public class ConfiguracaoEventoController : ControllerBase
         [FromBody] ConfiguracaoEventoRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var configuracao = await _configuracaoEventoService.CreateAsync(eventoId, request, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = configuracao.Id }, ConfiguracaoEventoResponseDTO.ValueOf(configuracao));
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var configuracao = await _configuracaoEventoService.CreateAsync(eventoId, request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = configuracao.Id }, ConfiguracaoEventoResponseDTO.ValueOf(configuracao));
     }
 
     [HttpPut("{id}")]
@@ -76,28 +59,15 @@ public class ConfiguracaoEventoController : ControllerBase
         [FromBody] ConfiguracaoEventoRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var configuracao = await _configuracaoEventoService.UpdateAsync(id, request, cancellationToken);
-            if (configuracao == null)
-                return NotFound($"Configuração de Evento com Id {id} não encontrada.");
-
-            return NoContent();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _configuracaoEventoService.UpdateAsync(id, request, cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Organizador")]
     public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken = default)
     {
-        var deletado = await _configuracaoEventoService.DeleteAsync(id, cancellationToken);
-        if (!deletado)
-            return NotFound($"Configuração de Evento com Id {id} não encontrada.");
-
+        await _configuracaoEventoService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }

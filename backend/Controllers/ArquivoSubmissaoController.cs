@@ -26,29 +26,18 @@ public class ArquivoSubmissaoController : ControllerBase
             return BadRequest(new { message = "Arquivo não foi enviado." });
         }
 
-        try
+        var entidade = await _arquivoService.UploadAsync(submissaoId, arquivo, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = entidade.Id }, new
         {
-            var entidade = await _arquivoService.UploadAsync(submissaoId, arquivo, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = entidade.Id }, new
-            {
-                entidade.Id,
-                entidade.NomeArquivo,
-                entidade.Tipo,
-                entidade.Tamanho,
-                entidade.Caminho,
-                entidade.Versao,
-                entidade.SubmissaoId,
-                entidade.DataUpload
-            });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erro interno ao salvar o arquivo.", error = ex.Message });
-        }
+            entidade.Id,
+            entidade.NomeArquivo,
+            entidade.Tipo,
+            entidade.Tamanho,
+            entidade.Caminho,
+            entidade.Versao,
+            entidade.SubmissaoId,
+            entidade.DataUpload
+        });
     }
 
     [HttpGet("{id:long}")]

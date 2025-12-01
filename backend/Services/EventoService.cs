@@ -2,6 +2,7 @@ using AcadEvents.Dtos;
 using AcadEvents.Models;
 using AcadEvents.Repositories;
 using AcadEvents.Services.EmailTemplates;
+using AcadEvents.Exceptions;
 
 namespace AcadEvents.Services;
 
@@ -37,14 +38,17 @@ public class EventoService
         // Verificar se o organizador existe
         var organizador = await _organizadorRepository.FindByIdAsync(organizadorId, cancellationToken);
         if (organizador == null)
-            throw new ArgumentException($"Organizador com Id {organizadorId} não encontrado.");
+            throw new NotFoundException("Organizador", organizadorId);
 
         return await _eventoRepository.FindByOrganizadorIdAsync(organizadorId, cancellationToken);
     }
 
-    public async Task<Evento?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<Evento> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _eventoRepository.FindByIdWithOrganizadoresAsync(id, cancellationToken);
+        var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(id, cancellationToken);
+        if (evento == null)
+            throw new NotFoundException("Evento", id);
+        return evento;
     }
 
     public async Task<Evento> CreateAsync(long organizadorId, EventoRequestDTO request, CancellationToken cancellationToken = default)
@@ -52,21 +56,21 @@ public class EventoService
         // Verificar se o organizador existe
         var organizador = await _organizadorRepository.FindByIdAsync(organizadorId, cancellationToken);
         if (organizador == null)
-            throw new ArgumentException($"Organizador com Id {organizadorId} não encontrado.");
+            throw new NotFoundException("Organizador", organizadorId);
 
         // Verificar se a configuração existe
         var configuracao = await _configuracaoEventoRepository.FindByIdAsync(request.ConfiguracaoEventoId, cancellationToken);
         if (configuracao == null)
-            throw new ArgumentException($"Configuração de Evento com Id {request.ConfiguracaoEventoId} não encontrada.");
+            throw new NotFoundException("Configuração de Evento", request.ConfiguracaoEventoId);
 
         // Verificar se a configuração já está associada a outro evento (relacionamento 1:1)
         var eventoExistente = await _eventoRepository.FindByConfiguracaoEventoIdAsync(request.ConfiguracaoEventoId, cancellationToken);
         if (eventoExistente != null)
-            throw new ArgumentException($"A configuração de evento com Id {request.ConfiguracaoEventoId} já está associada ao evento com Id {eventoExistente.Id}.");
+            throw new ConflictException($"A configuração de evento com Id {request.ConfiguracaoEventoId} já está associada ao evento com Id {eventoExistente.Id}.");
 
         // Validar que o prazo de submissão não acontece antes da data de início do evento
         if (configuracao.PrazoSubmissao < request.DataInicio)
-            throw new ArgumentException($"O prazo de submissão ({configuracao.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({request.DataInicio:dd/MM/yyyy}).");
+            throw new BusinessRuleException($"O prazo de submissão ({configuracao.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({request.DataInicio:dd/MM/yyyy}).");
 
         // Criar o evento
         var evento = new Evento
@@ -165,28 +169,28 @@ public class EventoService
         return eventoCompleto!;
     }
 
-    public async Task<Evento?> UpdateAsync(long id, EventoRequestDTO request, CancellationToken cancellationToken = default)
+    public async Task<Evento> UpdateAsync(long id, EventoRequestDTO request, CancellationToken cancellationToken = default)
     {
         var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(id, cancellationToken);
         if (evento == null)
-            return null;
+            throw new NotFoundException("Evento", id);
 
         // Verificar se a configuração existe
         var configuracao = await _configuracaoEventoRepository.FindByIdAsync(request.ConfiguracaoEventoId, cancellationToken);
         if (configuracao == null)
-            throw new ArgumentException($"Configuração de Evento com Id {request.ConfiguracaoEventoId} não encontrada.");
+            throw new NotFoundException("Configuração de Evento", request.ConfiguracaoEventoId);
 
         // Verificar se a configuração já está associada a outro evento diferente (relacionamento 1:1)
         if (evento.ConfiguracaoEventoId != request.ConfiguracaoEventoId)
         {
             var eventoComConfiguracao = await _eventoRepository.FindByConfiguracaoEventoIdAsync(request.ConfiguracaoEventoId, cancellationToken);
             if (eventoComConfiguracao != null && eventoComConfiguracao.Id != id)
-                throw new ArgumentException($"A configuração de evento com Id {request.ConfiguracaoEventoId} já está associada ao evento com Id {eventoComConfiguracao.Id}.");
+                throw new ConflictException($"A configuração de evento com Id {request.ConfiguracaoEventoId} já está associada ao evento com Id {eventoComConfiguracao.Id}.");
         }
 
         // Validar que o prazo de submissão não acontece antes da data de início do evento
         if (configuracao.PrazoSubmissao < request.DataInicio)
-            throw new ArgumentException($"O prazo de submissão ({configuracao.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({request.DataInicio:dd/MM/yyyy}).");
+            throw new BusinessRuleException($"O prazo de submissão ({configuracao.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({request.DataInicio:dd/MM/yyyy}).");
 
         // Atualizar propriedades
         evento.Nome = request.Nome;
@@ -205,9 +209,13 @@ public class EventoService
         return eventoCompleto;
     }
 
-    public async Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _eventoRepository.DeleteAsync(id, cancellationToken);
+        var evento = await _eventoRepository.FindByIdAsync(id, cancellationToken);
+        if (evento == null)
+            throw new NotFoundException("Evento", id);
+            
+        await _eventoRepository.DeleteAsync(id, cancellationToken);
     }
 
     public async Task<Evento> AddOrganizadorAsync(long eventoId, string emailOrganizador, CancellationToken cancellationToken = default)
@@ -215,17 +223,17 @@ public class EventoService
         // Buscar organizador por email
         var organizador = await _organizadorRepository.FindByEmailAsync(emailOrganizador, cancellationToken);
         if (organizador == null)
-            throw new ArgumentException($"Organizador com email {emailOrganizador} não encontrado.");
+            throw new NotFoundException($"Organizador com email {emailOrganizador} não encontrado.");
 
         // Buscar evento para validar se já está adicionado
         var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);
         if (evento == null)
-            throw new ArgumentException($"Evento com Id {eventoId} não encontrado.");
+            throw new NotFoundException("Evento", eventoId);
 
         // Validar se o organizador já está no evento
         if (evento.Organizadores.Any(o => o.Id == organizador.Id))
         {
-            throw new ArgumentException($"O organizador com email {emailOrganizador} já está adicionado ao evento.");
+            throw new ConflictException($"O organizador com email {emailOrganizador} já está adicionado ao evento.");
         }
 
         // Adicionar organizador

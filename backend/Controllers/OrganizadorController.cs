@@ -27,9 +27,6 @@ namespace AcadEvents.Controllers
         public async Task<ActionResult<OrganizadorResponseDTO>> GetByEmail(string email, CancellationToken cancellationToken = default)
         {
             var organizador = await _organizadorService.GetByEmailAsync(email, cancellationToken);
-            if (organizador == null)
-                return NotFound($"Organizador com email {email} não encontrado.");
-
             return Ok(OrganizadorResponseDTO.ValueOf(organizador));
         }
 
@@ -37,9 +34,6 @@ namespace AcadEvents.Controllers
         public async Task<ActionResult<OrganizadorResponseDTO>> GetById(long id, CancellationToken cancellationToken = default)
         {
             var organizador = await _organizadorService.GetByIdAsync(id, cancellationToken);
-            if (organizador == null)
-                return NotFound($"Organizador com Id {id} não encontrado.");
-
             return Ok(OrganizadorResponseDTO.ValueOf(organizador));
         }
 
@@ -48,15 +42,8 @@ namespace AcadEvents.Controllers
             [FromBody] OrganizadorRequestDTO request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var organizador = await _organizadorService.CreateAsync(request, cancellationToken);
-                return CreatedAtAction(nameof(GetById), new { id = organizador.Id }, OrganizadorResponseDTO.ValueOf(organizador));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var organizador = await _organizadorService.CreateAsync(request, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { id = organizador.Id }, OrganizadorResponseDTO.ValueOf(organizador));
         }
 
         [HttpPut("{id}")]
@@ -65,27 +52,14 @@ namespace AcadEvents.Controllers
             [FromBody] OrganizadorRequestDTO request,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var organizador = await _organizadorService.UpdateAsync(id, request, cancellationToken);
-                if (organizador == null)
-                    return NotFound($"Organizador com Id {id} não encontrado.");
-
-                return NoContent();
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await _organizadorService.UpdateAsync(id, request, cancellationToken);
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(long id, CancellationToken cancellationToken = default)
         {
-            var deletado = await _organizadorService.DeleteAsync(id, cancellationToken);
-            if (!deletado)
-                return NotFound($"Organizador com Id {id} não encontrado.");
-
+            await _organizadorService.DeleteAsync(id, cancellationToken);
             return NoContent();
         }
     }
