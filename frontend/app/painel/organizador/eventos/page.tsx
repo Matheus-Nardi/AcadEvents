@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
   Calendar, 
@@ -9,14 +8,14 @@ import {
   Globe, 
   Plus, 
   Loader2,
-  Clock,
   CheckCircle2,
-  XCircle,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  ListTree
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { eventoService } from "@/lib/services/evento/EventoService";
+import { trilhaService } from "@/lib/services/trilha/TrilhaService";
 import { Evento } from "@/types/evento/Evento";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +26,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 const getStatusBadge = (status: string) => {
@@ -73,6 +80,8 @@ export default function EventosPage() {
   const router = useRouter();
   const [eventos, setEventos] = React.useState<Evento[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [showNoTrilhasModal, setShowNoTrilhasModal] = React.useState(false);
+  const [isCheckingTrilhas, setIsCheckingTrilhas] = React.useState(false);
 
   React.useEffect(() => {
     const fetchEventos = async () => {
@@ -94,6 +103,50 @@ export default function EventosPage() {
     fetchEventos();
   }, []);
 
+  const handleCreateEventoClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    try {
+      setIsCheckingTrilhas(true);
+      const trilhas = await trilhaService.getAll();
+      
+      if (trilhas.length === 0) {
+        setShowNoTrilhasModal(true);
+        setIsCheckingTrilhas(false);
+        return;
+      }
+
+      // Verifica se alguma trilha tem trilhas temáticas
+      let hasTrilhaComTematicas = false;
+      for (const trilha of trilhas) {
+        try {
+          const tematicas = await trilhaService.getByTrilhaId(trilha.id);
+          if (tematicas.length > 0) {
+            hasTrilhaComTematicas = true;
+            break;
+          }
+        } catch (error) {
+          console.error(`Erro ao verificar trilhas temáticas da trilha ${trilha.id}:`, error);
+        }
+      }
+
+      if (!hasTrilhaComTematicas) {
+        setShowNoTrilhasModal(true);
+      } else {
+        router.push("/painel/organizador/criar-evento");
+      }
+    } catch (error) {
+      console.error("Erro ao verificar trilhas:", error);
+      toast.error("Erro ao verificar trilhas disponíveis");
+    } finally {
+      setIsCheckingTrilhas(false);
+    }
+  };
+
+  const handleRedirectToCreateTrilha = () => {
+    router.push("/painel/organizador/criar-trilha");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -103,33 +156,67 @@ export default function EventosPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/painel/organizador")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-2">
-              Meus Eventos
-            </h1>
-            <p className="text-muted-foreground">
-              Gerencie e acompanhe todos os seus eventos acadêmicos
-            </p>
+    <>
+      <Dialog open={showNoTrilhasModal} onOpenChange={() => {}}>
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/20 mx-auto mb-4">
+              <AlertCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <DialogTitle className="text-center">Trilhas Necessárias</DialogTitle>
+            <DialogDescription className="text-center">
+              Para criar um evento, é necessário ter pelo menos uma trilha com trilhas temáticas cadastradas.
+              <br />
+              <br />
+              Por favor, crie uma trilha primeiro antes de criar um evento.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={handleRedirectToCreateTrilha} className="w-full sm:w-auto">
+              <ListTree className="mr-2 h-4 w-4" />
+              Criar Trilha
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/painel/organizador")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-2">
+                Meus Eventos
+              </h1>
+              <p className="text-muted-foreground">
+                Gerencie e acompanhe todos os seus eventos acadêmicos
+              </p>
+            </div>
           </div>
+          <Button 
+            onClick={handleCreateEventoClick}
+            disabled={isCheckingTrilhas}
+          >
+            {isCheckingTrilhas ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verificando...
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Criar Novo Evento
+              </>
+            )}
+          </Button>
         </div>
-        <Button asChild>
-          <Link href="/painel/organizador/criar-evento">
-            <Plus className="mr-2 h-4 w-4" />
-            Criar Novo Evento
-          </Link>
-        </Button>
-      </div>
 
       {/* Stats */}
       {eventos.length > 0 && (
@@ -174,11 +261,21 @@ export default function EventosPage() {
             <p className="text-muted-foreground text-center mb-6 max-w-md">
               Você ainda não criou nenhum evento. Comece criando seu primeiro evento acadêmico!
             </p>
-            <Button asChild>
-              <Link href="/painel/organizador/criar-evento">
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Primeiro Evento
-              </Link>
+            <Button 
+              onClick={handleCreateEventoClick}
+              disabled={isCheckingTrilhas}
+            >
+              {isCheckingTrilhas ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Primeiro Evento
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -259,9 +356,8 @@ export default function EventosPage() {
           ))}
         </div>
       )}
-
-      
     </div>
+    </>
   );
 }
 
