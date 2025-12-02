@@ -4,7 +4,7 @@ import { Avaliacao } from '@/types/avaliacao/Avaliacao';
 import { AvaliacaoRequest } from '@/types/avaliacao/AvaliacaoRequest';
 import { ConviteAvaliacao } from '@/types/avaliacao/ConviteAvaliacao';
 import { RecusarConviteRequest } from '@/types/avaliacao/RecusarConviteRequest';
-import { recomendacaoAvaliacaoToCamelCase } from '@/lib/utils/enumToCamelCase';
+import { recomendacaoAvaliacaoToSnakeCase } from '@/lib/utils/enumToCamelCase';
 
 class AvaliacaoService {
   private getApiUrl(): string {
@@ -66,10 +66,10 @@ class AvaliacaoService {
 
   async create(request: AvaliacaoRequest): Promise<Avaliacao> {
     try {
-      // Converter enum para camelCase antes de enviar
+      // Converter enum para UPPER_SNAKE_CASE (com underscore) antes de enviar
       const requestBody = {
         ...request,
-        recomendacaoEnum: recomendacaoAvaliacaoToCamelCase(request.recomendacaoEnum),
+        recomendacaoEnum: recomendacaoAvaliacaoToSnakeCase(request.recomendacaoEnum),
       };
       
       const response = await axios.post(

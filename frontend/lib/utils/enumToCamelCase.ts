@@ -92,6 +92,15 @@ export function recomendacaoAvaliacaoToCamelCase(recomendacao: RecomendacaoAvali
 }
 
 /**
+ * Converte RecomendacaoAvaliacao para UPPER_SNAKE_CASE string (com underscore)
+ * Ex: APROVAR_COM_RESSALVAS -> APROVAR_COM_RESSALVAS
+ */
+export function recomendacaoAvaliacaoToSnakeCase(recomendacao: RecomendacaoAvaliacao): string {
+  // O enum já está no formato correto (APROVAR_COM_RESSALVAS), apenas retorna como string
+  return String(recomendacao);
+}
+
+/**
  * Converte string camelCase de volta para RecomendacaoAvaliacao
  */
 export function camelCaseToRecomendacaoAvaliacao(camelCase: string): RecomendacaoAvaliacao {
