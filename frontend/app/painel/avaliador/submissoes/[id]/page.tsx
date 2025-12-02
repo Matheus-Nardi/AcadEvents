@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Download, ArrowLeft, FileText, Calendar, Tag, User, AlertCircle, Send, Clock, Eye, CheckCircle2 } from "lucide-react";
+import { Loader2, Download, ArrowLeft, FileText, Calendar, Tag, User, AlertCircle, Send, Clock, Eye, CheckCircle2, BookMarked, BookOpen, ExternalLink, Copy, Hash, Link as LinkIcon, Layers, Edit } from "lucide-react";
 import { submissaoService } from "@/lib/services/submissao/SubmissaoService";
 import { arquivoSubmissaoService } from "@/lib/services/submissao/ArquivoSubmissaoService";
 import { avaliacaoService } from "@/lib/services/avaliacao/AvaliacaoService";
@@ -30,6 +30,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Referencia } from "@/types/referencia/Referencia";
+import { referenciaService } from "@/lib/services/referencia/ReferenciaService";
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -145,12 +147,26 @@ export default function SubmissaoDetalhesPage() {
   const [notaRedacao, setNotaRedacao] = React.useState<number>(5);
   const [recomendacao, setRecomendacao] = React.useState<string>("");
   const [confidencial, setConfidencial] = React.useState<boolean>(false);
+  const [referencias, setReferencias] = React.useState<Referencia[]>([]);
+  const [loadingReferencias, setLoadingReferencias] = React.useState(false);
 
   const loadSubmissao = async () => {
     try {
       setLoading(true);
       const data = await submissaoService.getById(submissaoId);
       setSubmissao(data);
+
+      try {
+        setLoadingReferencias(true);
+        const refs = await referenciaService.getBySubmissao(submissaoId);
+        setReferencias(refs);
+      } catch (refError: any) {
+        console.error("Erro ao buscar referências:", refError);
+        // Não bloqueia a exibição da submissão se houver erro ao buscar referências
+        setReferencias([]);
+      } finally {
+        setLoadingReferencias(false);
+      }
 
       // Busca os arquivos da submissão
       const files = await arquivoSubmissaoService.listarPorSubmissao(submissaoId);
@@ -231,6 +247,11 @@ export default function SubmissaoDetalhesPage() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copiado para a área de transferência");
+  };
+
   const submeterAvaliacao = async () => {
     if (!submissao) return;
 
@@ -249,10 +270,10 @@ export default function SubmissaoDetalhesPage() {
       };
 
       const avaliacaoCriada = await avaliacaoService.create(avaliacaoRequest);
-      
+
       // Atualiza a avaliação do avaliador logado
       setMinhaAvaliacao(avaliacaoCriada);
-      
+
       toast.success("Avaliação enviada com sucesso!");
       setNotaGeral(5);
       setNotaOriginalidade(5);
@@ -331,8 +352,99 @@ export default function SubmissaoDetalhesPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Coluna principal - PDF */}
-        <div className="lg:col-span-2">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Resumo */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Resumo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {submissao.resumo}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Palavras-chave */}
+          {submissao.palavrasChave && submissao.palavrasChave.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Tag className="h-5 w-5" />
+                  Palavras-chave
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {submissao.palavrasChave.map((palavra, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center rounded-full bg-primary/10 text-primary px-3 py-1.5 text-sm font-medium hover:bg-primary/20 transition-colors cursor-default"
+                    >
+                      {palavra}
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Informações Adicionais */}
+          {(submissao.sessaoId || submissao.doiId) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LinkIcon className="h-5 w-5" />
+                  Informações Adicionais
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {submissao.sessaoId && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">ID da Sessão</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono">{submissao.sessaoId}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => copyToClipboard(String(submissao.sessaoId))}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {submissao.doiId && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">DOI ID</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono">{submissao.doiId}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => copyToClipboard(String(submissao.doiId))}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Visualização do Documento</CardTitle>
@@ -366,10 +478,136 @@ export default function SubmissaoDetalhesPage() {
             </CardContent>
           </Card>
 
+          {/* Referências */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookMarked className="h-5 w-5" />
+                Referências
+                {loadingReferencias && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </CardTitle>
+              <CardDescription>
+                {referencias.length > 0
+                  ? `${referencias.length} referência${referencias.length > 1 ? 's' : ''} encontrada${referencias.length > 1 ? 's' : ''}`
+                  : "Nenhuma referência cadastrada para esta submissão"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingReferencias ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : referencias.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <BookMarked className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma referência foi adicionada a esta submissão.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {referencias.map((referencia) => (
+                    <div
+                      key={referencia.id}
+                      className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-semibold text-base leading-tight">
+                            {referencia.titulo}
+                          </h4>
+                          {referencia.doiValido && (
+                            <span className="inline-flex items-center rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-0.5 text-xs font-medium shrink-0">
+                              DOI Válido
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                          {referencia.autores && (
+                            <div className="flex items-center gap-1.5">
+                              <User className="h-3.5 w-3.5" />
+                              <span>{referencia.autores}</span>
+                            </div>
+                          )}
+                          {referencia.ano && (
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span>{referencia.ano}</span>
+                            </div>
+                          )}
+                          {referencia.publicacao && (
+                            <div className="flex items-center gap-1.5">
+                              <BookOpen className="h-3.5 w-3.5" />
+                              <span className="line-clamp-1">{referencia.publicacao}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {referencia.doiCodigo && (
+                          <div className="flex items-center gap-2 pt-2 border-t">
+                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-muted-foreground mb-0.5">DOI</p>
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={referencia.doiUrl || `https://doi.org/${referencia.doiCodigo}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm font-mono text-primary hover:underline break-all"
+                                >
+                                  {referencia.doiCodigo}
+                                </a>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0"
+                                  onClick={() => copyToClipboard(referencia.doiCodigo || "")}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {referencia.abstract && (
+                          <div className="pt-2">
+                            <p className="text-xs text-muted-foreground mb-1">Resumo</p>
+                            <p className="text-sm text-muted-foreground line-clamp-3">
+                              {referencia.abstract}
+                            </p>
+                          </div>
+                        )}
+
+                        {(referencia.tipoPublicacao || referencia.publisher) && (
+                          <div className="flex flex-wrap gap-2 pt-2 border-t">
+                            {referencia.tipoPublicacao && (
+                              <span className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground px-2 py-1 text-xs">
+                                {referencia.tipoPublicacao}
+                              </span>
+                            )}
+                            {referencia.publisher && (
+                              <span className="inline-flex items-center rounded-md bg-secondary text-secondary-foreground px-2 py-1 text-xs">
+                                {referencia.publisher}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Avaliação abaixo do PDF */}
           {minhaAvaliacao ? (
             // Card mostrando avaliação já feita
-            <Card className="mt-6">
+            <Card>
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 flex-1">
@@ -475,7 +713,7 @@ export default function SubmissaoDetalhesPage() {
             </Card>
           ) : (
             // Card azul com botão para abrir formulário
-            <Card className="mt-6">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-base">Sua Avaliação</CardTitle>
                 <CardDescription>
@@ -495,124 +733,102 @@ export default function SubmissaoDetalhesPage() {
           )}
         </div>
 
-        {/* Coluna lateral - Informações */}
+        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Card de Informações */}
+          {/* Informações Básicas */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Informações da Submissão</CardTitle>
+              <CardTitle className="text-lg">Informações</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                  <Tag className="h-3 w-3" />
-                  Formato
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Hash className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-1">ID da Submissão</p>
+                    <p className="text-sm font-medium font-mono">{submissao.id}</p>
+                  </div>
                 </div>
-                <div>
-                  {getFormatoBadge(submissao.formato)}
-                </div>
-              </div>
 
-              <div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                  <User className="h-3 w-3" />
-                  Autor
-                </div>
-                <div className="text-sm">
-                  {submissao.autorNome || `ID: ${submissao.autorId}`}
-                </div>
-              </div>
+                {submissao.trilhaTematicaNome && (
+                  <div className="flex items-start gap-3">
+                    <Layers className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-1">Trilha Temática</p>
+                      <p className="text-sm font-medium">{submissao.trilhaTematicaNome}</p>
+                    </div>
+                  </div>
+                )}
 
-              <div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                  <Tag className="h-3 w-3" />
-                  Trilha Temática
-                </div>
-                <div className="text-sm">
-                  {submissao.trilhaTematicaNome || `ID: ${submissao.trilhaTematicaId}`}
-                </div>
-              </div>
+                {submissao.autorNome && (
+                  <div className="flex items-start gap-3">
+                    <User className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-1">Autor</p>
+                      <p className="text-sm font-medium">{submissao.autorNome}</p>
+                    </div>
+                  </div>
+                )}
 
-              <div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                  <Calendar className="h-3 w-3" />
-                  Submetida em
-                </div>
-                <div className="text-sm">
-                  {formatDate(submissao.dataSubmissao)}
+                {submissao.versao && (
+                  <div className="flex items-start gap-3">
+                    <Hash className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-1">Versão</p>
+                      <p className="text-sm font-medium">Versão {submissao.versao}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Datas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Datas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Calendar className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground mb-1">Data de Submissão</p>
+                  <p className="text-sm font-medium">{formatDate(submissao.dataSubmissao)}</p>
                 </div>
               </div>
 
               {submissao.dataUltimaModificacao && (
-                <div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <Calendar className="h-3 w-3" />
-                    Última modificação
-                  </div>
-                  <div className="text-sm">
-                    {formatDate(submissao.dataUltimaModificacao)}
+                <div className="flex items-start gap-3">
+                  <Edit className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-1">Última Modificação</p>
+                    <p className="text-sm font-medium">{formatDate(submissao.dataUltimaModificacao)}</p>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Card de Resumo */}
+          {/* Status e Formato */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Resumo</CardTitle>
+              <CardTitle className="text-lg">Status e Formato</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {submissao.resumo}
-              </p>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Status Atual</p>
+                <div className="flex justify-start">
+                  {getStatusBadge(submissao.status)}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Formato</p>
+                <div className="flex justify-start">
+                  {getFormatoBadge(submissao.formato)}
+                </div>
+              </div>
             </CardContent>
           </Card>
-
-          {/* Card de Palavras-chave */}
-          {submissao.palavrasChave && submissao.palavrasChave.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Palavras-chave</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {submissao.palavrasChave.map((palavra, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-block rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
-                    >
-                      {palavra}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Card de Arquivos */}
-          {arquivos.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Arquivos</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {arquivos.map((arquivo) => (
-                  <Button
-                    key={arquivo.id}
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                    onClick={() => downloadArquivo(arquivo.id, arquivo.nomeArquivo || `arquivo-${arquivo.id}`)}
-                  >
-                    <Download className="h-4 w-4" />
-                    <span className="truncate">
-                      {arquivo.nomeArquivo || `Arquivo ${arquivo.id}`}
-                    </span>
-                  </Button>
-                ))}
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
 
@@ -625,11 +841,11 @@ export default function SubmissaoDetalhesPage() {
               Avalie a submissão "{submissao?.titulo}" com os critérios abaixo
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">Notas Específicas (0-10)</h4>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <Label htmlFor="notaGeral">Nota Geral</Label>

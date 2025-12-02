@@ -177,7 +177,7 @@ export default function SubmissaoDetailsPage() {
   const [loadingArquivo, setLoadingArquivo] = React.useState(false);
   const [avaliacoes, setAvaliacoes] = React.useState<Avaliacao[]>([]);
   const [loadingAvaliacoes, setLoadingAvaliacoes] = React.useState(false);
-
+  const [downloadingPdf, setDownloadingPdf] = React.useState(false);
   React.useEffect(() => {
     const fetchSubmissao = async () => {
       if (!submissaoId || isNaN(submissaoId)) {
@@ -190,7 +190,7 @@ export default function SubmissaoDetailsPage() {
         setLoading(true);
         const data = await submissaoService.getById(submissaoId);
         setSubmissao(data);
-        
+
         // Buscar referências da submissão
         try {
           setLoadingReferencias(true);
@@ -217,7 +217,7 @@ export default function SubmissaoDetailsPage() {
               return new Date(prev.dataUpload) > new Date(current.dataUpload) ? prev : current;
             });
             setArquivoSubmissao(arquivoMaisRecente);
-            
+
             // Fazer download do arquivo e criar blob URL
             const blob = await arquivoSubmissaoService.downloadArquivo(arquivoMaisRecente.id);
             const url = URL.createObjectURL(blob);
@@ -231,8 +231,8 @@ export default function SubmissaoDetailsPage() {
         }
       } catch (error: any) {
         console.error("Erro ao buscar submissão:", error);
-        const errorMessage = 
-          error?.response?.data?.message || 
+        const errorMessage =
+          error?.response?.data?.message ||
           "Erro ao carregar submissão. Tente novamente.";
         toast.error(errorMessage);
         router.push("/painel/autor");
@@ -268,7 +268,7 @@ export default function SubmissaoDetailsPage() {
 
   const handleDelete = async () => {
     if (!submissao) return;
-    
+
     if (!confirm("Tem certeza que deseja excluir esta submissão? Esta ação não pode ser desfeita.")) {
       return;
     }
@@ -278,8 +278,8 @@ export default function SubmissaoDetailsPage() {
       toast.success("Submissão excluída com sucesso");
       router.push("/painel/autor");
     } catch (error: any) {
-      const errorMessage = 
-        error?.response?.data?.message || 
+      const errorMessage =
+        error?.response?.data?.message ||
         "Erro ao excluir submissão. Tente novamente.";
       toast.error(errorMessage);
     }
@@ -299,28 +299,24 @@ export default function SubmissaoDetailsPage() {
     };
   }, [pdfUrl]);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-    setPageNumber(1);
+  const downloadPdf = async (arquivoId: number) => {
+    try {
+      setDownloadingPdf(true);
+      const blob = await arquivoSubmissaoService.downloadArquivo(arquivoId);
+      const url = window.URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        "Erro ao carregar PDF. Tente novamente.";
+      toast.error(errorMessage);
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
-  const goToPrevPage = () => {
-    setPageNumber((prev) => Math.max(1, prev - 1));
-  };
 
-  const goToNextPage = () => {
-    setPageNumber((prev) => (numPages ? Math.min(numPages, prev + 1) : prev));
-  };
-
-  const handleZoomIn = () => {
-    setScale((prev) => Math.min(2.0, prev + 0.2));
-  };
-
-  const handleZoomOut = () => {
-    setScale((prev) => Math.max(0.5, prev - 0.2));
-  };
-
-  const handleDownload = async () => {
+  const downloadArquivo = async () => {
     if (!arquivoSubmissao) return;
     try {
       const blob = await arquivoSubmissaoService.downloadArquivo(arquivoSubmissao.id);
@@ -443,141 +439,7 @@ export default function SubmissaoDetailsPage() {
             </Card>
           )}
 
-          {/* Documento da Submissão */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Documento da Submissão
-                  {loadingArquivo && (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  )}
-                </CardTitle>
-                {arquivoSubmissao && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownload}
-                    className="gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download
-                  </Button>
-                )}
-              </div>
-              {arquivoSubmissao && (
-                <CardDescription>
-                  {arquivoSubmissao.nomeArquivo} • {(arquivoSubmissao.tamanho / 1024).toFixed(2)} KB • Versão {arquivoSubmissao.versao}
-                </CardDescription>
-              )}
-            </CardHeader>
-            <CardContent>
-              {loadingArquivo ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : !arquivoSubmissao ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <FileText className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum arquivo foi anexado a esta submissão.
-                  </p>
-                </div>
-              ) : !pdfUrl ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <AlertCircle className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
-                  <p className="text-sm text-muted-foreground">
-                    Erro ao carregar o documento.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Controles */}
-                  <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={goToPrevPage}
-                        disabled={pageNumber <= 1}
-                        className="h-8 w-8"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm font-medium min-w-[100px] text-center">
-                        Página {pageNumber} de {numPages || "?"}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={goToNextPage}
-                        disabled={!numPages || pageNumber >= numPages}
-                        className="h-8 w-8"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleZoomOut}
-                        disabled={scale <= 0.5}
-                        className="h-8 w-8"
-                      >
-                        <ZoomOut className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm font-medium min-w-[60px] text-center">
-                        {Math.round(scale * 100)}%
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleZoomIn}
-                        disabled={scale >= 2.0}
-                        className="h-8 w-8"
-                      >
-                        <ZoomIn className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
 
-                  {/* Visualizador PDF */}
-                  <div className="flex justify-center border rounded-lg bg-muted/30 p-4 overflow-auto max-h-[800px]">
-                    <Document
-                      file={pdfUrl}
-                      onLoadSuccess={onDocumentLoadSuccess}
-                      loading={
-                        <div className="flex items-center justify-center py-12">
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                      }
-                      error={
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                          <AlertCircle className="h-12 w-12 text-destructive mb-3" />
-                          <p className="text-sm text-destructive font-medium mb-1">
-                            Erro ao carregar o PDF
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            O arquivo pode estar corrompido ou em um formato não suportado.
-                          </p>
-                        </div>
-                      }
-                    >
-                      <Page
-                        pageNumber={pageNumber}
-                        scale={scale}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
-                        className="shadow-lg"
-                      />
-                    </Document>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Informações Adicionais */}
           {(submissao.sessaoId || submissao.doiId) && (
@@ -631,6 +493,39 @@ export default function SubmissaoDetailsPage() {
             </Card>
           )}
 
+          <Card>
+            <CardHeader>
+              <CardTitle>Visualização do Documento</CardTitle>
+              <CardDescription>
+                {downloadingPdf ? "Carregando PDF..." : pdfUrl ? "PDF carregado com sucesso" : "Nenhum PDF disponível"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {downloadingPdf ? (
+                <div className="flex items-center justify-center h-96">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : pdfUrl ? (
+                <div className="bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden" style={{ height: "800px" }}>
+                  <iframe
+                    src={pdfUrl}
+                    className="w-full h-full rounded-lg"
+                    title="PDF Viewer"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-96 bg-gray-100 dark:bg-gray-900 rounded-lg">
+                  <div className="text-center">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      Nenhum PDF disponível para visualização
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Referências */}
           <Card>
             <CardHeader>
@@ -642,7 +537,7 @@ export default function SubmissaoDetailsPage() {
                 )}
               </CardTitle>
               <CardDescription>
-                {referencias.length > 0 
+                {referencias.length > 0
                   ? `${referencias.length} referência${referencias.length > 1 ? 's' : ''} encontrada${referencias.length > 1 ? 's' : ''}`
                   : "Nenhuma referência cadastrada para esta submissão"}
               </CardDescription>
@@ -677,7 +572,7 @@ export default function SubmissaoDetailsPage() {
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                           {referencia.autores && (
                             <div className="flex items-center gap-1.5">
