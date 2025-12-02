@@ -12,6 +12,8 @@ public record CrossrefWorkDTO
     public string? ContainerTitle { get; init; }
     public string? PublishedPrint { get; init; }
     public string? PublishedOnline { get; init; }
+    public List<int>? PublishedPrintDateParts { get; init; }
+    public List<int>? PublishedOnlineDateParts { get; init; }
     public string? Type { get; init; }
     public string? URL { get; init; }
     public string? Abstract { get; init; }
@@ -25,16 +27,28 @@ public record CrossrefResponseDTO
 
 public record CrossrefMessageDTO
 {
+    [JsonPropertyName("DOI")]
     public string? DOI { get; init; }
+    
     public List<string>? Title { get; init; }
+    
     public List<CrossrefAuthorDTO>? Author { get; init; }
+    
     public string? Publisher { get; init; }
+    
+    [JsonPropertyName("container-title")]
     public List<string>? ContainerTitle { get; init; }
+    
+    [JsonPropertyName("published-print")]
     public CrossrefDateDTO? PublishedPrint { get; init; }
+    
+    [JsonPropertyName("published-online")]
     public CrossrefDateDTO? PublishedOnline { get; init; }
+    
     public string? Type { get; init; }
     
     [JsonConverter(typeof(UrlConverter))]
+    [JsonPropertyName("URL")]
     public List<string>? URL { get; init; }
     
     public string? Abstract { get; init; }
@@ -87,6 +101,7 @@ public record CrossrefAuthorDTO
 
 public record CrossrefDateDTO
 {
+    [JsonPropertyName("date-parts")]
     public List<List<int>>? DateParts { get; init; }
 }
 

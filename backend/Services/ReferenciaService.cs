@@ -55,6 +55,7 @@ public class ReferenciaService
             throw new NotFoundException($"DOI {doi} não encontrado no Crossref ou inválido.");
         }
 
+     
         // 2. Verificar se DOI já existe, senão criar
         var doiCodigo = work.DOI ?? doi.Trim();
         var doiEntity = await _doiRepository.FindByCodigoAsync(doiCodigo, cancellationToken);
@@ -77,8 +78,7 @@ public class ReferenciaService
         }
 
         // 3. Extrair ano da data de publicação
-        var ano = ExtractYear(work.PublishedPrint, work.PublishedOnline);
-
+        var ano = ExtractYear(work.PublishedOnlineDateParts, work.PublishedPrintDateParts, doi);
         // 4. Criar Referencia
         var autores = work.Author != null && work.Author.Any()
             ? string.Join("; ", work.Author)
@@ -114,18 +114,21 @@ public class ReferenciaService
         return referencia;
     }
 
-    private static int ExtractYear(string? publishedPrint, string? publishedOnline)
+    private int ExtractYear(List<int>? publishedOnlineDateParts, List<int>? publishedPrintDateParts, string doi)
     {
-        var dateStr = publishedOnline ?? publishedPrint;
-        if (string.IsNullOrWhiteSpace(dateStr))
-            return DateTime.UtcNow.Year;
+        // Priorizar published-online, depois published-print
+        var dateParts = publishedOnlineDateParts ?? publishedPrintDateParts;
+        
+        if (dateParts == null || dateParts.Count == 0)
+        {
+            var currentYear = DateTime.UtcNow.Year;
+            _logger.LogWarning("- DateParts é null ou vazio. Retornando ano atual: {Year}", currentYear);
+            return currentYear;
+        }
 
-        // Formato esperado: "YYYY-MM-DD" ou "YYYY"
-        var parts = dateStr.Split('-');
-        if (parts.Length > 0 && int.TryParse(parts[0], out var year))
-            return year;
-
-        return DateTime.UtcNow.Year;
+        
+        var year = dateParts[0];
+        return year;
     }
 }
 

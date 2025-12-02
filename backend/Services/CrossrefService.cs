@@ -103,8 +103,42 @@ public class CrossrefService : ICrossrefService
         }
     }
 
-    private static CrossrefWorkDTO MapToWorkDTO(CrossrefMessageDTO message)
+    private CrossrefWorkDTO MapToWorkDTO(CrossrefMessageDTO message)
     {
+        _logger.LogInformation("MapToWorkDTO - Iniciando mapeamento");
+        _logger.LogInformation("  - message.PublishedPrint é null: {IsNull}", message.PublishedPrint == null);
+        _logger.LogInformation("  - message.PublishedOnline é null: {IsNull}", message.PublishedOnline == null);
+        
+        if (message.PublishedPrint != null)
+        {
+            _logger.LogInformation("  - message.PublishedPrint.DateParts é null: {IsNull}", message.PublishedPrint.DateParts == null);
+            if (message.PublishedPrint.DateParts != null)
+            {
+                _logger.LogInformation("  - message.PublishedPrint.DateParts.Count: {Count}", message.PublishedPrint.DateParts.Count);
+                if (message.PublishedPrint.DateParts.Count > 0)
+                {
+                    var firstDatePart = message.PublishedPrint.DateParts[0];
+                    _logger.LogInformation("  - message.PublishedPrint.DateParts[0]: [{DateParts}]", 
+                        string.Join(", ", firstDatePart));
+                }
+            }
+        }
+        
+        if (message.PublishedOnline != null)
+        {
+            _logger.LogInformation("  - message.PublishedOnline.DateParts é null: {IsNull}", message.PublishedOnline.DateParts == null);
+            if (message.PublishedOnline.DateParts != null)
+            {
+                _logger.LogInformation("  - message.PublishedOnline.DateParts.Count: {Count}", message.PublishedOnline.DateParts.Count);
+                if (message.PublishedOnline.DateParts.Count > 0)
+                {
+                    var firstDatePart = message.PublishedOnline.DateParts[0];
+                    _logger.LogInformation("  - message.PublishedOnline.DateParts[0]: [{DateParts}]", 
+                        string.Join(", ", firstDatePart));
+                }
+            }
+        }
+
         var authors = message.Author?
             .Select(a => $"{a.Given} {a.Family}".Trim())
             .Where(a => !string.IsNullOrWhiteSpace(a))
@@ -116,13 +150,19 @@ public class CrossrefService : ICrossrefService
 
         var publishedPrint = message.PublishedPrint?.DateParts?.FirstOrDefault();
         var publishedOnline = message.PublishedOnline?.DateParts?.FirstOrDefault();
+        
+        _logger.LogInformation("  - publishedPrint extraído: {DateParts}", 
+            publishedPrint != null ? string.Join(", ", publishedPrint) : "null");
+        _logger.LogInformation("  - publishedOnline extraído: {DateParts}", 
+            publishedOnline != null ? string.Join(", ", publishedOnline) : "null");
 
+        // Formatar como string para compatibilidade (formato: "YYYY-MM-DD" ou "YYYY-MM" ou "YYYY")
         var publishedPrintStr = publishedPrint != null && publishedPrint.Count >= 1
-            ? string.Join("-", publishedPrint.Take(3).Select(d => d.ToString().PadLeft(2, '0')))
+            ? FormatDateParts(publishedPrint)
             : null;
 
         var publishedOnlineStr = publishedOnline != null && publishedOnline.Count >= 1
-            ? string.Join("-", publishedOnline.Take(3).Select(d => d.ToString().PadLeft(2, '0')))
+            ? FormatDateParts(publishedOnline)
             : null;
 
         return new CrossrefWorkDTO
@@ -134,10 +174,34 @@ public class CrossrefService : ICrossrefService
             ContainerTitle = containerTitle,
             PublishedPrint = publishedPrintStr,
             PublishedOnline = publishedOnlineStr,
+            PublishedPrintDateParts = publishedPrint,
+            PublishedOnlineDateParts = publishedOnline,
             Type = message.Type,
             URL = url,
             Abstract = message.Abstract
         };
+    }
+
+    private static string FormatDateParts(List<int> dateParts)
+    {
+        if (dateParts == null || dateParts.Count == 0)
+            return string.Empty;
+
+        var parts = new List<string>();
+        
+        // Ano (primeiro elemento) - não precisa de padding
+        if (dateParts.Count >= 1)
+            parts.Add(dateParts[0].ToString());
+        
+        // Mês (segundo elemento) - padding com 2 dígitos
+        if (dateParts.Count >= 2)
+            parts.Add(dateParts[1].ToString().PadLeft(2, '0'));
+        
+        // Dia (terceiro elemento) - padding com 2 dígitos
+        if (dateParts.Count >= 3)
+            parts.Add(dateParts[2].ToString().PadLeft(2, '0'));
+
+        return string.Join("-", parts);
     }
 }
 
