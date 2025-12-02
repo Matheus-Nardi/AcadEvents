@@ -90,7 +90,7 @@ export default function Header() {
           {/* Navigation - apenas links públicos */}
           <nav className="hidden md:flex items-center gap-6">
             <Link
-              href="/eventos"
+              href="/"
               className="text-sm font-medium text-foreground transition-colors hover:text-primary"
             >
               Eventos
