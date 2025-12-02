@@ -67,5 +67,19 @@ public class SubmissaoRepository : BaseRepository<Submissao>
             .Where(s => s.EventoId == eventoId)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Submissao?> FindByAutorTrilhaTematicaEventoAsync(
+        long autorId, 
+        long trilhaTematicaId, 
+        long eventoId, 
+        CancellationToken cancellationToken = default)
+    {
+        return await _db.Submissoes
+            .Where(s => s.AutorId == autorId 
+                && s.TrilhaTematicaId == trilhaTematicaId 
+                && s.EventoId == eventoId)
+            .OrderByDescending(s => s.DataSubmissao)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }
 

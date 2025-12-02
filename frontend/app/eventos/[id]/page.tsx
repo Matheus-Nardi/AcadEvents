@@ -28,8 +28,11 @@ import {
 } from "lucide-react";
 import { eventoService } from "@/lib/services/evento/EventoService";
 import { trilhaService } from "@/lib/services/trilha/TrilhaService";
+import { submissaoService } from "@/lib/services/submissao/SubmissaoService";
 import { Evento } from "@/types/evento/Evento";
 import { TrilhaTematica } from "@/types/trilha-tematica/TrilhaTematica";
+import { VerificarSubmissaoAutor } from "@/types/submissao/VerificarSubmissaoAutor";
+import { StatusSubmissao } from "@/types/submissao/StatusSubmissao";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
@@ -135,6 +138,8 @@ export default function EventoDetailsPage() {
   const [loading, setLoading] = React.useState(true);
   const [trilhasTematicas, setTrilhasTematicas] = React.useState<Record<number, TrilhaTematica[]>>({});
   const [loadingTematicas, setLoadingTematicas] = React.useState<Record<number, boolean>>({});
+  const [verificacoesSubmissao, setVerificacoesSubmissao] = React.useState<Record<number, VerificarSubmissaoAutor>>({});
+  const [loadingVerificacoes, setLoadingVerificacoes] = React.useState<Record<number, boolean>>({});
 
   React.useEffect(() => {
     const fetchEvento = async () => {
@@ -169,6 +174,36 @@ export default function EventoDetailsPage() {
           
           setTrilhasTematicas(tematicasMap);
           setLoadingTematicas(loadingMap);
+
+          // Buscar verificações de submissão para cada trilha temática (apenas se for autor)
+          if (isAutor(user)) {
+            const verificacoesMap: Record<number, VerificarSubmissaoAutor> = {};
+            const loadingVerificacoesMap: Record<number, boolean> = {};
+
+            // Iterar sobre todas as trilhas temáticas
+            for (const trilha of data.trilhas) {
+              const tematicas = tematicasMap[trilha.id] || [];
+              for (const tematica of tematicas) {
+                loadingVerificacoesMap[tematica.id] = true;
+                try {
+                  const verificacao = await submissaoService.verificarSubmissaoAutor(eventoId, tematica.id);
+                  verificacoesMap[tematica.id] = verificacao;
+                } catch (error) {
+                  console.error(`Erro ao verificar submissão para trilha temática ${tematica.id}:`, error);
+                  // Em caso de erro, assumir que pode fazer submissão
+                  verificacoesMap[tematica.id] = {
+                    existeSubmissao: false,
+                    podeFazerSubmissao: true,
+                  };
+                } finally {
+                  loadingVerificacoesMap[tematica.id] = false;
+                }
+              }
+            }
+
+            setVerificacoesSubmissao(verificacoesMap);
+            setLoadingVerificacoes(loadingVerificacoesMap);
+          }
         }
       } catch (error: any) {
         console.error("Erro ao buscar evento:", error);
@@ -183,7 +218,7 @@ export default function EventoDetailsPage() {
     };
 
     fetchEvento();
-  }, [eventoId, router]);
+  }, [eventoId, router, user]);
 
   if (loading) {
     return (
@@ -426,28 +461,51 @@ export default function EventoDetailsPage() {
                                   const eventoTerminado = evento.dataFim 
                                     ? new Date(evento.dataFim) < agora
                                     : false;
-                                  const submissaoPermitida = !prazoSubmissaoExpirado && !eventoTerminado;
+                                  
+                                  // Buscar verificação de submissão para esta trilha temática
+                                  const verificacao = verificacoesSubmissao[tematica.id];
+                                  const carregandoVerificacao = loadingVerificacoes[tematica.id];
+                                  
+                                  // Pode fazer submissão se:
+                                  // 1. Prazo não expirou e evento não terminou
+                                  // 2. Não existe submissão OU existe submissão com status APROVADA_COM_RESSALVAS
+                                  const podeFazerSubmissao = verificacao?.podeFazerSubmissao ?? false;
+                                  const submissaoPermitida = !prazoSubmissaoExpirado && 
+                                    !eventoTerminado && 
+                                    podeFazerSubmissao;
 
                                   return (
                                     <CardContent>
-                                      <Button
-                                        className="w-full"
-                                        onClick={() => {
-                                          router.push(`/eventos/${eventoId}/submissao/${tematica.id}`);
-                                        }}
-                                        disabled={!submissaoPermitida}
-                                      >
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        FAZER SUBMISSÃO
-                                      </Button>
-                                      {!submissaoPermitida && (
-                                        <p className="text-xs text-muted-foreground mt-2 text-center">
-                                          {prazoSubmissaoExpirado 
-                                            ? "O prazo de submissão expirou"
-                                            : eventoTerminado 
-                                            ? "O evento já terminou"
-                                            : "Submissão não permitida"}
-                                        </p>
+                                      {carregandoVerificacao ? (
+                                        <div className="flex items-center justify-center py-4">
+                                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <Button
+                                            className="w-full"
+                                            onClick={() => {
+                                              router.push(`/eventos/${eventoId}/submissao/${tematica.id}`);
+                                            }}
+                                            disabled={!submissaoPermitida}
+                                          >
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            {verificacao?.existeSubmissao && verificacao.status === StatusSubmissao.APROVADA_COM_RESSALVAS
+                                              ? "REFAZER SUBMISSÃO"
+                                              : "FAZER SUBMISSÃO"}
+                                          </Button>
+                                          {!submissaoPermitida && (
+                                            <p className="text-xs text-muted-foreground mt-2 text-center">
+                                              {prazoSubmissaoExpirado 
+                                                ? "O prazo de submissão expirou"
+                                                : eventoTerminado 
+                                                ? "O evento já terminou"
+                                                : verificacao?.existeSubmissao && !verificacao.podeFazerSubmissao
+                                                ? "Você já possui uma submissão para esta trilha temática"
+                                                : "Submissão não permitida"}
+                                            </p>
+                                          )}
+                                        </>
                                       )}
                                     </CardContent>
                                   );

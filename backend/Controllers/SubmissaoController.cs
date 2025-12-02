@@ -79,6 +79,32 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         return Ok(response);
     }
 
+    [HttpGet("autor/verificar/{eventoId}/{trilhaTematicaId}")]
+    [Authorize(Roles = "Autor")]
+    public async Task<ActionResult<VerificarSubmissaoAutorDTO>> VerificarSubmissaoAutor(
+        long eventoId,
+        long trilhaTematicaId,
+        CancellationToken cancellationToken = default)
+    {
+        // Extrair o ID do autor do token
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+            
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long autorId))
+        {
+            return Unauthorized(new { message = "Token inválido: ID do autor não encontrado." });
+        }
+
+        var resultado = await submissaoService.VerificarSubmissaoAutorAsync(
+            autorId, 
+            trilhaTematicaId, 
+            eventoId, 
+            cancellationToken);
+        
+        return Ok(resultado);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Autor")]
     public async Task<ActionResult<SubmissaoResponseDTO>> Create(

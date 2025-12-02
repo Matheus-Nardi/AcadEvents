@@ -5,6 +5,7 @@ import { SubmissaoRequest } from '@/types/submissao/SubmissaoRequest';
 import { SubmissaoRequestApi } from '@/types/submissao/SubmissaoRequestApi';
 import { SubmissaoCreateCompleteResult } from '@/types/submissao/SubmissaoCreateCompleteResult';
 import { DecidirStatusRevisaoRequest } from '@/types/submissao/DecidirStatusRevisaoRequest';
+import { VerificarSubmissaoAutor } from '@/types/submissao/VerificarSubmissaoAutor';
 import { 
   statusSubmissaoToCamelCase, 
   formatoSubmissaoToCamelCase,
@@ -149,6 +150,28 @@ class SubmissaoService {
       }));
     } catch (error) {
       console.error("Erro ao buscar submissões para avaliar:", error);
+      throw error;
+    }
+  }
+
+  async verificarSubmissaoAutor(eventoId: number, trilhaTematicaId: number): Promise<VerificarSubmissaoAutor> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/submissao/autor/verificar/${eventoId}/${trilhaTematicaId}`,
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      // Converte o enum de status se existir
+      const data = response.data;
+      return {
+        existeSubmissao: data.existeSubmissao,
+        submissaoId: data.submissaoId,
+        status: data.status ? camelCaseToStatusSubmissao(data.status) : undefined,
+        podeFazerSubmissao: data.podeFazerSubmissao,
+      };
+    } catch (error) {
+      console.error(`Erro ao verificar submissão do autor para evento ${eventoId} e trilha temática ${trilhaTematicaId}:`, error);
       throw error;
     }
   }

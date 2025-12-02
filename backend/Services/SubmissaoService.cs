@@ -268,6 +268,60 @@ public class SubmissaoService
         return await _submissaoRepository.FindForAvaliadorAvaliacaoAsync(avaliadorId, cancellationToken);
     }
 
+    public async Task<VerificarSubmissaoAutorDTO> VerificarSubmissaoAutorAsync(
+        long autorId, 
+        long trilhaTematicaId, 
+        long eventoId, 
+        CancellationToken cancellationToken = default)
+    {
+        // Validar que o autor existe
+        if (!await _autorRepository.ExistsAsync(autorId, cancellationToken))
+        {
+            throw new NotFoundException("Autor", autorId);
+        }
+
+        // Validar que a trilha temática existe
+        if (!await _trilhaTematicaRepository.ExistsAsync(trilhaTematicaId, cancellationToken))
+        {
+            throw new NotFoundException("Trilha temática", trilhaTematicaId);
+        }
+
+        // Validar que o evento existe
+        if (!await _eventoRepository.ExistsAsync(eventoId, cancellationToken))
+        {
+            throw new NotFoundException("Evento", eventoId);
+        }
+
+        // Buscar submissão do autor para esta trilha temática e evento
+        var submissao = await _submissaoRepository.FindByAutorTrilhaTematicaEventoAsync(
+            autorId, 
+            trilhaTematicaId, 
+            eventoId, 
+            cancellationToken);
+
+        if (submissao == null)
+        {
+            return new VerificarSubmissaoAutorDTO
+            {
+                ExisteSubmissao = false,
+                SubmissaoId = null,
+                Status = null,
+                PodeFazerSubmissao = true
+            };
+        }
+
+        // Pode fazer submissão apenas se o status for APROVADA_COM_RESSALVAS
+        var podeFazerSubmissao = submissao.Status == StatusSubmissao.APROVADA_COM_RESSALVAS;
+
+        return new VerificarSubmissaoAutorDTO
+        {
+            ExisteSubmissao = true,
+            SubmissaoId = submissao.Id,
+            Status = submissao.Status,
+            PodeFazerSubmissao = podeFazerSubmissao
+        };
+    }
+
     public async Task<bool> ValidarAvaliacoesCompletasAsync(long submissaoId, CancellationToken cancellationToken = default)
     {
         var submissao = await _submissaoRepository.FindByIdWithEventoAsync(submissaoId, cancellationToken);
