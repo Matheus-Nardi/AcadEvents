@@ -50,6 +50,11 @@ public class AvaliacaoService
         return await _repository.FindBySubmissaoIdAsync(submissaoId, cancellationToken);
     }
 
+    public async Task<Avaliacao?> FindByAvaliadorIdAndSubmissaoIdAsync(long avaliadorId, long submissaoId, CancellationToken cancellationToken = default)
+    {
+        return await _repository.FindByAvaliadorIdAndSubmissaoIdAsync(avaliadorId, submissaoId, cancellationToken);
+    }
+
     public async Task<Avaliacao> CreateAsync(AvaliacaoRequestDTO request, long avaliadorId, CancellationToken cancellationToken = default)
     {
         // Verificar se a submissão existe e obter o evento relacionado

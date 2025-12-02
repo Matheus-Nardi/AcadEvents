@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Download, ArrowLeft, FileText, Calendar, Tag, User, AlertCircle, Send, Clock, Eye } from "lucide-react";
+import { Loader2, Download, ArrowLeft, FileText, Calendar, Tag, User, AlertCircle, Send, Clock, Eye, CheckCircle2 } from "lucide-react";
 import { submissaoService } from "@/lib/services/submissao/SubmissaoService";
 import { arquivoSubmissaoService } from "@/lib/services/submissao/ArquivoSubmissaoService";
 import { avaliacaoService } from "@/lib/services/avaliacao/AvaliacaoService";
@@ -129,6 +129,7 @@ export default function SubmissaoDetalhesPage() {
   const [submissao, setSubmissao] = React.useState<Submissao | null>(null);
   const [arquivos, setArquivos] = React.useState<ArquivoSubmissao[]>([]);
   const [avaliacoes, setAvaliacoes] = React.useState<Avaliacao[]>([]);
+  const [minhaAvaliacao, setMinhaAvaliacao] = React.useState<Avaliacao | null>(null);
   const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [downloadingPdf, setDownloadingPdf] = React.useState(false);
@@ -182,6 +183,14 @@ export default function SubmissaoDetalhesPage() {
     } catch (error: any) {
       console.error("Erro ao carregar avaliações:", error);
       // Não exibir erro para o usuário aqui, apenas log
+    }
+
+    // Carrega a avaliação do avaliador logado separadamente
+    try {
+      const minhaAval = await avaliacaoService.getMinhaAvaliacaoPorSubmissao(submissaoId);
+      setMinhaAvaliacao(minhaAval);
+    } catch (error: any) {
+      console.error("Erro ao carregar minha avaliação:", error);
     } finally {
       setLoadingAvaliacoes(false);
     }
@@ -239,7 +248,11 @@ export default function SubmissaoDetalhesPage() {
         submissaoId: submissao.id,
       };
 
-      await avaliacaoService.create(avaliacaoRequest);
+      const avaliacaoCriada = await avaliacaoService.create(avaliacaoRequest);
+      
+      // Atualiza a avaliação do avaliador logado
+      setMinhaAvaliacao(avaliacaoCriada);
+      
       toast.success("Avaliação enviada com sucesso!");
       setNotaGeral(5);
       setNotaOriginalidade(5);
@@ -352,6 +365,134 @@ export default function SubmissaoDetalhesPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Avaliação abaixo do PDF */}
+          {minhaAvaliacao ? (
+            // Card mostrando avaliação já feita
+            <Card className="mt-6">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-success/10">
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base">Sua Avaliação Realizada</CardTitle>
+                      <CardDescription className="mt-1 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Enviada em {formatDate(minhaAvaliacao.dataCriacao)}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold">Notas Obtidas</h3>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Média: {((minhaAvaliacao.notaGeral! + minhaAvaliacao.notaOriginalidade! + minhaAvaliacao.notaMetodologia! + minhaAvaliacao.notaRelevancia!) / 4).toFixed(1)} / 10
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg border bg-card hover:bg-secondary/50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nota Geral</p>
+                        <span className="text-xs text-muted-foreground">{minhaAvaliacao.notaGeral?.toFixed(1)}/10</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${(minhaAvaliacao.notaGeral! / 10) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg border bg-card hover:bg-secondary/50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Originalidade</p>
+                        <span className="text-xs text-muted-foreground">{minhaAvaliacao.notaOriginalidade?.toFixed(1)}/10</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${(minhaAvaliacao.notaOriginalidade! / 10) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg border bg-card hover:bg-secondary/50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Metodologia</p>
+                        <span className="text-xs text-muted-foreground">{minhaAvaliacao.notaMetodologia?.toFixed(1)}/10</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${(minhaAvaliacao.notaMetodologia! / 10) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg border bg-card hover:bg-secondary/50 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Relevância</p>
+                        <span className="text-xs text-muted-foreground">{minhaAvaliacao.notaRelevancia?.toFixed(1)}/10</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${(minhaAvaliacao.notaRelevancia! / 10) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {minhaAvaliacao.recomendacao && (
+                  <div className="border-t pt-6">
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-primary" />
+                      Recomendação
+                    </h3>
+                    <div className="p-4 rounded-lg border bg-secondary/30">
+                      <p className="text-sm text-card-foreground whitespace-pre-wrap leading-relaxed">{minhaAvaliacao.recomendacao}</p>
+                    </div>
+                  </div>
+                )}
+
+                {minhaAvaliacao.confidencial && (
+                  <div className="border-t pt-6">
+                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-warning/10 border border-warning/20">
+                      <span className="text-base">🔒</span>
+                      <div>
+                        <p className="text-xs font-semibold text-warning">Avaliação Confidencial</p>
+                        <p className="text-xs text-warning/80">Esta avaliação foi marcada como confidencial</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            // Card azul com botão para abrir formulário
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-base">Sua Avaliação</CardTitle>
+                <CardDescription>
+                  Avalie esta submissão com critérios detalhados
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={() => setModalAberto(true)}
+                  className="w-full gap-2"
+                >
+                  <Send className="h-4 w-4" />
+                  Abrir Formulário de Avaliação
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Coluna lateral - Informações */}
@@ -472,25 +613,6 @@ export default function SubmissaoDetalhesPage() {
               </CardContent>
             </Card>
           )}
-
-          {/* Card de Avaliação - Botão */}
-          <Card className="border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950">
-            <CardHeader>
-              <CardTitle className="text-lg">Sua Avaliação</CardTitle>
-              <CardDescription>
-                Avalie esta submissão com critérios detalhados
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                onClick={() => setModalAberto(true)}
-                className="w-full gap-2"
-              >
-                <Send className="h-4 w-4" />
-                Abrir Formulário de Avaliação
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
 

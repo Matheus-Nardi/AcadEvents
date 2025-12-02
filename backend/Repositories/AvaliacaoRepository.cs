@@ -23,5 +23,11 @@ public class AvaliacaoRepository : BaseRepository<Avaliacao>
             .OrderByDescending(a => a.DataCriacao)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Avaliacao?> FindByAvaliadorIdAndSubmissaoIdAsync(long avaliadorId, long submissaoId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Set<Avaliacao>()
+            .FirstOrDefaultAsync(a => a.AvaliadorId == avaliadorId && a.SubmissaoId == submissaoId, cancellationToken);
+    }
 }
 

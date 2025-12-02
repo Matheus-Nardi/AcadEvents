@@ -266,5 +266,43 @@ public class AvaliacaoController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpGet("minha-avaliacao/{submissaoId}")]
+    [Authorize(Roles = "Avaliador")]
+    public async Task<ActionResult<AvaliacaoResponseDTO>> GetMinhaAvaliacaoPorSubmissao(
+        long submissaoId,
+        CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Avaliador tentando recuperar sua avaliação da submissão {SubmissaoId}", submissaoId);
+
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+        
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out var avaliadorId))
+        {
+            logger.LogWarning("ID do avaliador não encontrado no token");
+            return Unauthorized(new { message = "Token inválido" });
+        }
+
+        try
+        {
+            var avaliacao = await service.FindByAvaliadorIdAndSubmissaoIdAsync(avaliadorId, submissaoId, cancellationToken);
+            
+            if (avaliacao == null)
+            {
+                logger.LogInformation("Avaliação não encontrada para avaliador {AvaliadorId} na submissão {SubmissaoId}", avaliadorId, submissaoId);
+                return NotFound();
+            }
+
+            var response = AvaliacaoResponseDTO.ValueOf(avaliacao);
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            logger.LogWarning(ex, "Erro ao buscar avaliação do avaliador {AvaliadorId} na submissão {SubmissaoId}", avaliadorId, submissaoId);
+            return BadRequest(ex.Message);
+        }
+    }
 }
 

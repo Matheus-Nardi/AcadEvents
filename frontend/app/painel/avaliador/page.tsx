@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Loader2, CheckCircle2, XCircle, FileText, Clock, Eye } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle, FileText, Clock, Eye, AlertCircle, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -326,70 +326,134 @@ export default function AvaliadorPage() {
 
           {avaliacaoSelecionada && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-semibold uppercase">Status</p>
-                  <p className="text-sm">
-                    {avaliacaoSelecionada.notaGeral && avaliacaoSelecionada.notaGeral > 0 
-                      ? "Concluída" 
-                      : "Pendente"}
-                  </p>
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                <div>
+                  <p className="text-xs text-muted-foreground font-semibold uppercase mb-1">Status</p>
+                  <div className="flex items-center gap-2">
+                    {avaliacaoSelecionada.notaGeral && avaliacaoSelecionada.notaGeral > 0 ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                        <span className="text-sm font-medium">Concluída</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-4 w-4 text-warning" />
+                        <span className="text-sm font-medium">Pendente</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-semibold uppercase">Data da Avaliação</p>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground font-semibold uppercase mb-1">Data</p>
                   <p className="text-sm">
                     {avaliacaoSelecionada.notaGeral && avaliacaoSelecionada.notaGeral > 0
                       ? formatDate(avaliacaoSelecionada.dataCriacao)
-                      : "Ainda não avaliado"}
+                      : "—"}
                   </p>
                 </div>
               </div>
 
               {avaliacaoSelecionada.notaGeral && avaliacaoSelecionada.notaGeral > 0 && (
                 <>
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Geral</p>
-                    <div className="bg-primary/10 rounded-lg p-4">
-                      <p className="text-3xl font-bold text-primary">{avaliacaoSelecionada.notaGeral.toFixed(1)}</p>
-                      <p className="text-xs text-muted-foreground mt-1">de 10 pontos</p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        Nota Geral
+                      </h3>
+                      <span className="text-xs text-muted-foreground">
+                        Média de 4 critérios
+                      </span>
+                    </div>
+                    <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
+                      <p className="text-4xl font-bold text-primary">{avaliacaoSelecionada.notaGeral.toFixed(1)}</p>
+                      <p className="text-xs text-muted-foreground mt-2">de 10 pontos</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Originalidade</p>
-                      <div className="bg-muted rounded-lg p-3">
-                        <p className="text-lg font-semibold">{avaliacaoSelecionada.notaOriginalidade.toFixed(1)}</p>
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold">Notas por Critério</h3>
+                    
+                    <div className="space-y-3">
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Originalidade</p>
+                          <span className="text-sm font-semibold">{avaliacaoSelecionada.notaOriginalidade.toFixed(1)}/10</span>
+                        </div>
+                        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${(avaliacaoSelecionada.notaOriginalidade / 10) * 100}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Metodologia</p>
-                      <div className="bg-muted rounded-lg p-3">
-                        <p className="text-lg font-semibold">{avaliacaoSelecionada.notaMetodologia.toFixed(1)}</p>
+
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Metodologia</p>
+                          <span className="text-sm font-semibold">{avaliacaoSelecionada.notaMetodologia.toFixed(1)}/10</span>
+                        </div>
+                        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${(avaliacaoSelecionada.notaMetodologia / 10) * 100}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Relevância</p>
-                      <div className="bg-muted rounded-lg p-3">
-                        <p className="text-lg font-semibold">{avaliacaoSelecionada.notaRelevancia.toFixed(1)}</p>
+
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Relevância</p>
+                          <span className="text-sm font-semibold">{avaliacaoSelecionada.notaRelevancia.toFixed(1)}/10</span>
+                        </div>
+                        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${(avaliacaoSelecionada.notaRelevancia / 10) * 100}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground font-semibold uppercase">Nota Redação</p>
-                      <div className="bg-muted rounded-lg p-3">
-                        <p className="text-lg font-semibold">{avaliacaoSelecionada.notaRedacao.toFixed(1)}</p>
+
+                      <div className="p-3 rounded-lg border bg-card">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Redação</p>
+                          <span className="text-sm font-semibold">{avaliacaoSelecionada.notaRedacao.toFixed(1)}/10</span>
+                        </div>
+                        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${(avaliacaoSelecionada.notaRedacao / 10) * 100}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground font-semibold uppercase">Recomendação</p>
-                    <div className="bg-muted rounded-lg p-4">
-                      <p className="text-sm whitespace-pre-wrap">
-                        {avaliacaoSelecionada.recomendacao || "Sem recomendação"}
-                      </p>
+                  {avaliacaoSelecionada.recomendacao && (
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-semibold flex items-center gap-2">
+                        <Eye className="h-4 w-4 text-primary" />
+                        Recomendação
+                      </h3>
+                      <div className="p-4 rounded-lg border bg-secondary/30">
+                        <p className="text-sm text-card-foreground whitespace-pre-wrap leading-relaxed">
+                          {avaliacaoSelecionada.recomendacao}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {avaliacaoSelecionada.confidencial && (
+                    <div className="p-3 rounded-lg border border-warning/20 bg-warning/10">
+                      <div className="flex items-start gap-2">
+                        <span className="text-base mt-0.5">🔒</span>
+                        <div>
+                          <p className="text-xs font-semibold text-warning">Avaliação Confidencial</p>
+                          <p className="text-xs text-warning/80 mt-0.5">Esta avaliação foi marcada como confidencial</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>

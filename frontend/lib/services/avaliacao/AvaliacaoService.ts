@@ -205,6 +205,25 @@ class AvaliacaoService {
       throw error;
     }
   }
+
+  async getMinhaAvaliacaoPorSubmissao(submissaoId: number): Promise<Avaliacao | null> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/avaliacao/minha-avaliacao/${submissaoId}`,
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        // Avaliação não encontrada, retornar null
+        return null;
+      }
+      console.error(`Erro ao buscar minha avaliação da submissão ${submissaoId}:`, error);
+      throw error;
+    }
+  }
 }
 
 export const avaliacaoService = new AvaliacaoService();
