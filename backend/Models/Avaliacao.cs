@@ -9,6 +9,7 @@ public class Avaliacao : DefaultModel
     public double NotaMetodologia { get; set; }
     public double NotaRelevancia { get; set; }
     public double NotaRedacao { get; set; }
+    public RecomendacaoAvaliacao RecomendacaoEnum { get; set; }
     public string Recomendacao { get; set; }
     public bool Confidencial { get; set; }
 

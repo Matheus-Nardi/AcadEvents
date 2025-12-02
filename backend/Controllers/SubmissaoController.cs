@@ -213,6 +213,29 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         await submissaoService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
+
+    [HttpPut("{id:long}/decidir-status")]
+    [Authorize(Roles = "Organizador")]
+    public async Task<ActionResult<SubmissaoResponseDTO>> DecidirStatusRevisao(
+        long id,
+        [FromBody] DecidirStatusRevisaoRequestDTO request,
+        CancellationToken cancellationToken = default)
+    {
+        // Extrair o ID do organizador do token JWT
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+            
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long organizadorId))
+        {
+            return Unauthorized(new { message = "Token JWT inválido: ID do organizador não encontrado no token." });
+        }
+
+        // O organizadorId é extraído do token JWT, não é passado como parâmetro
+        var submissao = await submissaoService.DecidirStatusRevisaoAsync(id, organizadorId, request, cancellationToken);
+        var response = SubmissaoResponseDTO.ValueOf(submissao);
+        return Ok(response);
+    }
 }
 
 

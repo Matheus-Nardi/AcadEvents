@@ -74,6 +74,11 @@ const getStatusBadge = (status: StatusSubmissao) => {
       className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
       icon: <XCircle className="h-3 w-3" />
     },
+    [StatusSubmissao.EM_REVISÃO]: {
+      label: "Em Revisão",
+      className: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+      icon: <AlertCircle className="h-3 w-3" />
+    },
   };
 
   const config = statusConfig[status] || {

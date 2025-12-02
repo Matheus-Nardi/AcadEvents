@@ -129,12 +129,93 @@ public class AvaliacaoService
             NotaMetodologia = request.NotaMetodologia,
             NotaRelevancia = request.NotaRelevancia,
             NotaRedacao = request.NotaRedacao,
+            RecomendacaoEnum = request.RecomendacaoEnum,
             Recomendacao = request.Recomendacao,
             Confidencial = request.Confidencial,
             AvaliadorId = avaliadorId,
             SubmissaoId = request.SubmissaoId
         };
 
-        return await _repository.CreateAsync(avaliacao, cancellationToken);
+        var avaliacaoCriada = await _repository.CreateAsync(avaliacao, cancellationToken);
+
+        // Calcular e atualizar status automaticamente após criar avaliação
+        await CalcularEAtualizarStatusSubmissaoAsync(request.SubmissaoId, cancellationToken);
+
+        return avaliacaoCriada;
+    }
+
+    private async Task CalcularEAtualizarStatusSubmissaoAsync(
+        long submissaoId, 
+        CancellationToken cancellationToken = default)
+    {
+        var submissao = await _submissaoRepository.FindByIdWithEventoAsync(submissaoId, cancellationToken);
+        if (submissao == null) return;
+
+        var avaliacoes = await _repository.FindBySubmissaoIdAsync(submissaoId, cancellationToken);
+        
+        if (avaliacoes == null || !avaliacoes.Any()) return;
+
+        // Verificar se todas as avaliações foram concluídas
+        if (submissao.Evento?.Configuracao == null) return;
+
+        var numeroRequerido = submissao.Evento.Configuracao.NumeroAvaliadoresPorSubmissao;
+        if (avaliacoes.Count < numeroRequerido) return;
+
+        // Contar recomendações
+        var aprovar = avaliacoes.Count(a => a.RecomendacaoEnum == RecomendacaoAvaliacao.APROVAR);
+        var rejeitar = avaliacoes.Count(a => a.RecomendacaoEnum == RecomendacaoAvaliacao.REJEITAR);
+        var aprovarComRessalvas = avaliacoes.Count(a => a.RecomendacaoEnum == RecomendacaoAvaliacao.APROVAR_COM_RESSALVAS);
+
+        // Calcular média das notas gerais
+        var mediaNotaGeral = avaliacoes.Average(a => a.NotaGeral);
+
+        StatusSubmissao novoStatus;
+
+        // Caso 1: 50/50 (empate) -> EM_REVISÃO
+        if (aprovar == rejeitar && aprovarComRessalvas == 0)
+        {
+            novoStatus = StatusSubmissao.EM_REVISÃO;
+        }
+        // Caso 2: Maioria aprova -> APROVADA
+        else if (aprovar > rejeitar && aprovar > aprovarComRessalvas)
+        {
+            // Verificar se deve ser APROVADA_COM_RESSALVAS baseado na nota
+            if (mediaNotaGeral >= 6.0 && mediaNotaGeral < 8.0 && aprovarComRessalvas > 0)
+            {
+                novoStatus = StatusSubmissao.APROVADA_COM_RESSALVAS;
+            }
+            else
+            {
+                novoStatus = StatusSubmissao.APROVADA;
+            }
+        }
+        // Caso 3: Maioria rejeita -> REJEITADA
+        else if (rejeitar > aprovar && rejeitar > aprovarComRessalvas)
+        {
+            novoStatus = StatusSubmissao.REJEITADA;
+        }
+        // Caso 4: Maioria aprova com ressalvas ou nota entre 6-8
+        else if (aprovarComRessalvas > aprovar && aprovarComRessalvas > rejeitar)
+        {
+            novoStatus = StatusSubmissao.APROVADA_COM_RESSALVAS;
+        }
+        // Caso 5: Nota média entre 6-8 e há aprovações -> APROVADA_COM_RESSALVAS
+        else if (mediaNotaGeral >= 6.0 && mediaNotaGeral < 8.0 && aprovar > 0)
+        {
+            novoStatus = StatusSubmissao.APROVADA_COM_RESSALVAS;
+        }
+        // Caso padrão: se houver mais aprovações que rejeições
+        else if (aprovar > rejeitar)
+        {
+            novoStatus = StatusSubmissao.APROVADA;
+        }
+        else
+        {
+            novoStatus = StatusSubmissao.REJEITADA;
+        }
+
+        // Atualizar status da submissão
+        submissao.Status = novoStatus;
+        await _submissaoRepository.UpdateAsync(submissao, cancellationToken);
     }
 }

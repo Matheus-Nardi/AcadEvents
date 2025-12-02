@@ -4,6 +4,7 @@ import { Submissao } from '@/types/submissao/Submissao';
 import { SubmissaoRequest } from '@/types/submissao/SubmissaoRequest';
 import { SubmissaoRequestApi } from '@/types/submissao/SubmissaoRequestApi';
 import { SubmissaoCreateCompleteResult } from '@/types/submissao/SubmissaoCreateCompleteResult';
+import { DecidirStatusRevisaoRequest } from '@/types/submissao/DecidirStatusRevisaoRequest';
 import { 
   statusSubmissaoToCamelCase, 
   formatoSubmissaoToCamelCase,
@@ -317,6 +318,39 @@ class SubmissaoService {
       };
     } catch (error) {
       console.error("Erro ao criar submissão completa:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Decide o status final de uma submissão em revisão.
+   * O organizadorId é extraído automaticamente do token JWT no backend.
+   * @param id ID da submissão
+   * @param request Request com o novo status (APROVADA ou REJEITADA)
+   */
+  async decidirStatusRevisao(id: number, request: DecidirStatusRevisaoRequest): Promise<Submissao> {
+    try {
+      const requestBody = {
+        status: statusSubmissaoToCamelCase(request.status),
+      };
+
+      // O token JWT é enviado automaticamente via getAuthHeaders()
+      // O backend extrai o organizadorId do token
+      const response = await axios.put(
+        `${this.getApiUrl()}/submissao/${id}/decidir-status`,
+        requestBody,
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+
+      return {
+        ...response.data,
+        status: camelCaseToStatusSubmissao(response.data.status),
+        formato: camelCaseToFormatoSubmissao(response.data.formato),
+      };
+    } catch (error) {
+      console.error(`Erro ao decidir status de revisão da submissão ${id}:`, error);
       throw error;
     }
   }

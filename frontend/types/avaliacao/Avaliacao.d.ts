@@ -1,3 +1,5 @@
+import { RecomendacaoAvaliacao } from './RecomendacaoAvaliacao';
+
 export interface Avaliacao {
   id: number;
   dataCriacao: string;
@@ -6,6 +8,7 @@ export interface Avaliacao {
   notaMetodologia: number;
   notaRelevancia: number;
   notaRedacao: number;
+  recomendacaoEnum: RecomendacaoAvaliacao;
   recomendacao: string;
   confidencial: boolean;
   avaliadorId: number;

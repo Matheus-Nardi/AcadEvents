@@ -4,6 +4,7 @@ import { Avaliacao } from '@/types/avaliacao/Avaliacao';
 import { AvaliacaoRequest } from '@/types/avaliacao/AvaliacaoRequest';
 import { ConviteAvaliacao } from '@/types/avaliacao/ConviteAvaliacao';
 import { RecusarConviteRequest } from '@/types/avaliacao/RecusarConviteRequest';
+import { recomendacaoAvaliacaoToCamelCase } from '@/lib/utils/enumToCamelCase';
 
 class AvaliacaoService {
   private getApiUrl(): string {
@@ -65,9 +66,15 @@ class AvaliacaoService {
 
   async create(request: AvaliacaoRequest): Promise<Avaliacao> {
     try {
+      // Converter enum para camelCase antes de enviar
+      const requestBody = {
+        ...request,
+        recomendacaoEnum: recomendacaoAvaliacaoToCamelCase(request.recomendacaoEnum),
+      };
+      
       const response = await axios.post(
         `${this.getApiUrl()}/avaliacao`,
-        request,
+        requestBody,
         {
           headers: this.getAuthHeaders()
         }

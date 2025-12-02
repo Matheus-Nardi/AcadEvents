@@ -6,5 +6,6 @@ public enum StatusSubmissao
     EM_AVALIACAO,
     APROVADA,
     APROVADA_COM_RESSALVAS,
-    REJEITADA
+    REJEITADA,
+    EM_REVISÃO
 }

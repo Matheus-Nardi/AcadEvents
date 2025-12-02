@@ -11,6 +11,7 @@ public record AvaliacaoResponseDTO
     public double NotaMetodologia { get; init; }
     public double NotaRelevancia { get; init; }
     public double NotaRedacao { get; init; }
+    public RecomendacaoAvaliacao RecomendacaoEnum { get; init; }
     public string Recomendacao { get; init; }
     public bool Confidencial { get; init; }
     public long AvaliadorId { get; init; }
@@ -29,6 +30,7 @@ public record AvaliacaoResponseDTO
             NotaMetodologia = avaliacao.NotaMetodologia,
             NotaRelevancia = avaliacao.NotaRelevancia,
             NotaRedacao = avaliacao.NotaRedacao,
+            RecomendacaoEnum = avaliacao.RecomendacaoEnum,
             Recomendacao = avaliacao.Recomendacao,
             Confidencial = avaliacao.Confidencial,
             AvaliadorId = avaliacao.AvaliadorId,

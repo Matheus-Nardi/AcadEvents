@@ -19,6 +19,7 @@ public class SubmissaoService
     private readonly ConviteAvaliacaoRepository _conviteAvaliacaoRepository;
     private readonly ComiteCientificoRepository _comiteCientificoRepository;
     private readonly AvaliacaoRepository _avaliacaoRepository;
+    private readonly OrganizadorRepository _organizadorRepository;
     
     public SubmissaoService(
         SubmissaoRepository submissaoRepository,
@@ -30,7 +31,8 @@ public class SubmissaoService
         IEmailService emailService,
         ConviteAvaliacaoRepository conviteAvaliacaoRepository,
         ComiteCientificoRepository comiteCientificoRepository,
-        AvaliacaoRepository avaliacaoRepository)
+        AvaliacaoRepository avaliacaoRepository,
+        OrganizadorRepository organizadorRepository)
     {
         _submissaoRepository = submissaoRepository;
         _autorRepository = autorRepository;
@@ -42,6 +44,7 @@ public class SubmissaoService
         _conviteAvaliacaoRepository = conviteAvaliacaoRepository;
         _comiteCientificoRepository = comiteCientificoRepository;
         _avaliacaoRepository = avaliacaoRepository;
+        _organizadorRepository = organizadorRepository;
     }
 
     public Task<List<Submissao>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -344,6 +347,45 @@ public class SubmissaoService
         {
             await _conviteAvaliacaoRepository.CreateBulkAsync(convites, cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Permite que um organizador coordenador do comitê científico decida o status final de uma submissão em revisão.
+    /// O organizadorId deve ser extraído do token JWT no controller.
+    /// </summary>
+    public async Task<Submissao> DecidirStatusRevisaoAsync(
+        long submissaoId, 
+        long organizadorId, // Extraído do token JWT no controller
+        DecidirStatusRevisaoRequestDTO request, 
+        CancellationToken cancellationToken = default)
+    {
+        var submissao = await _submissaoRepository.FindByIdWithEventoAsync(submissaoId, cancellationToken);
+        if (submissao == null)
+            throw new NotFoundException("Submissão", submissaoId);
+
+        // Verificar se está em revisão
+        if (submissao.Status != StatusSubmissao.EM_REVISÃO)
+            throw new BusinessRuleException("A submissão não está em estado de revisão.");
+
+        // Verificar se o organizador existe (organizadorId vem do token JWT)
+        var organizador = await _organizadorRepository.FindByIdAsync(organizadorId, cancellationToken);
+        if (organizador == null)
+            throw new NotFoundException("Organizador", organizadorId);
+
+        // Verificar se o organizador é coordenador do comitê do evento
+        var eventoId = submissao.EventoId;
+        var comites = await _comiteCientificoRepository.FindAllWithRelacionamentosAsync(cancellationToken);
+        var comiteDoEvento = comites.FirstOrDefault(c => c.EventoId == eventoId);
+        
+        if (comiteDoEvento == null || !comiteDoEvento.Coordenadores.Any(co => co.Id == organizadorId))
+            throw new ForbiddenException("O organizador não é coordenador do comitê científico do evento.");
+
+        // Validar que o novo status é válido (apenas APROVADA ou REJEITADA)
+        if (request.Status != StatusSubmissao.APROVADA && request.Status != StatusSubmissao.REJEITADA)
+            throw new BadRequestException("O status final deve ser APROVADA ou REJEITADA.");
+
+        submissao.Status = request.Status;
+        return await _submissaoRepository.UpdateAsync(submissao, cancellationToken);
     }
 }
 

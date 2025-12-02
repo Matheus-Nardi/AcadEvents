@@ -11,6 +11,7 @@ import { ArquivoSubmissao } from "@/types/submissao/ArquivoSubmissao";
 import { StatusSubmissao } from "@/types/submissao/StatusSubmissao";
 import { AvaliacaoRequest } from "@/types/avaliacao/AvaliacaoRequest";
 import { Avaliacao } from "@/types/avaliacao/Avaliacao";
+import { RecomendacaoAvaliacao } from "@/types/avaliacao/RecomendacaoAvaliacao";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -29,6 +30,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Referencia } from "@/types/referencia/Referencia";
 import { referenciaService } from "@/lib/services/referencia/ReferenciaService";
@@ -70,6 +78,11 @@ const getStatusBadge = (status: StatusSubmissao) => {
       label: "Rejeitada",
       className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
       icon: <FileText className="h-3 w-3" />
+    },
+    [StatusSubmissao.EM_REVISÃO]: {
+      label: "Em Revisão",
+      className: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+      icon: <AlertCircle className="h-3 w-3" />
     },
   };
 
@@ -145,6 +158,7 @@ export default function SubmissaoDetalhesPage() {
   const [notaMetodologia, setNotaMetodologia] = React.useState<number>(5);
   const [notaRelevancia, setNotaRelevancia] = React.useState<number>(5);
   const [notaRedacao, setNotaRedacao] = React.useState<number>(5);
+  const [recomendacaoEnum, setRecomendacaoEnum] = React.useState<RecomendacaoAvaliacao>(RecomendacaoAvaliacao.APROVAR);
   const [recomendacao, setRecomendacao] = React.useState<string>("");
   const [confidencial, setConfidencial] = React.useState<boolean>(false);
   const [referencias, setReferencias] = React.useState<Referencia[]>([]);
@@ -264,6 +278,7 @@ export default function SubmissaoDetalhesPage() {
         notaMetodologia,
         notaRelevancia,
         notaRedacao,
+        recomendacaoEnum,
         recomendacao,
         confidencial,
         submissaoId: submissao.id,
@@ -280,6 +295,7 @@ export default function SubmissaoDetalhesPage() {
       setNotaMetodologia(5);
       setNotaRelevancia(5);
       setNotaRedacao(5);
+      setRecomendacaoEnum(RecomendacaoAvaliacao.APROVAR);
       setRecomendacao("");
       setConfidencial(false);
       setModalAberto(false);
@@ -933,10 +949,27 @@ export default function SubmissaoDetalhesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="recomendacao">Recomendação</Label>
+              <Label htmlFor="recomendacaoEnum">Recomendação *</Label>
+              <Select
+                value={recomendacaoEnum}
+                onValueChange={(value) => setRecomendacaoEnum(value as RecomendacaoAvaliacao)}
+              >
+                <SelectTrigger className="bg-white dark:bg-gray-800">
+                  <SelectValue placeholder="Selecione a recomendação" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={RecomendacaoAvaliacao.APROVAR}>Aprovar</SelectItem>
+                  <SelectItem value={RecomendacaoAvaliacao.REJEITAR}>Rejeitar</SelectItem>
+                  <SelectItem value={RecomendacaoAvaliacao.APROVAR_COM_RESSALVAS}>Aprovar com Ressalvas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="recomendacao">Comentários / Justificativa (Opcional)</Label>
               <Textarea
                 id="recomendacao"
-                placeholder="Adicione sua recomendação sobre esta submissão..."
+                placeholder="Adicione comentários ou justificativa sobre sua recomendação..."
                 value={recomendacao}
                 onChange={(e) => setRecomendacao(e.target.value)}
                 className="bg-white dark:bg-gray-800 min-h-24"

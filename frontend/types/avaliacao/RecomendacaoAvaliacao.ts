@@ -1,0 +1,6 @@
+export enum RecomendacaoAvaliacao {
+  APROVAR = "APROVAR",
+  REJEITAR = "REJEITAR",
+  APROVAR_COM_RESSALVAS = "APROVAR_COM_RESSALVAS"
+}
+

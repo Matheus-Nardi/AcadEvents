@@ -1,3 +1,5 @@
+using AcadEvents.Models;
+
 namespace AcadEvents.Dtos;
 
 public record AvaliacaoRequestDTO
@@ -7,6 +9,7 @@ public record AvaliacaoRequestDTO
     public double NotaMetodologia { get; init; }
     public double NotaRelevancia { get; init; }
     public double NotaRedacao { get; init; }
+    public RecomendacaoAvaliacao RecomendacaoEnum { get; init; }
     public string Recomendacao { get; init; }
     public bool Confidencial { get; init; }
     public long SubmissaoId { get; init; }

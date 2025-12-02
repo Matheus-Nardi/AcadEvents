@@ -1,5 +1,6 @@
 import { StatusSubmissao } from "@/types/submissao/StatusSubmissao"
 import { FormatoSubmissao } from "@/types/submissao/FormatoSubmissao"
+import { RecomendacaoAvaliacao } from "@/types/avaliacao/RecomendacaoAvaliacao"
 
 /**
  * Converte uma string UPPER_CASE para camelCase
@@ -27,6 +28,7 @@ const statusCamelCaseMap: Record<string, StatusSubmissao> = {
   aprovada: StatusSubmissao.APROVADA,
   aprovadaComRessalvas: StatusSubmissao.APROVADA_COM_RESSALVAS,
   rejeitada: StatusSubmissao.REJEITADA,
+  emRevisao: StatusSubmissao.EM_REVISÃO,
 }
 
 /**
@@ -38,6 +40,15 @@ const formatoCamelCaseMap: Record<string, FormatoSubmissao> = {
   poster: FormatoSubmissao.POSTER,
   resumoExpandido: FormatoSubmissao.RESUMO_EXPANDIDO,
   workshop: FormatoSubmissao.WORKSHOP,
+}
+
+/**
+ * Mapeamento de camelCase para RecomendacaoAvaliacao
+ */
+const recomendacaoCamelCaseMap: Record<string, RecomendacaoAvaliacao> = {
+  aprovar: RecomendacaoAvaliacao.APROVAR,
+  rejeitar: RecomendacaoAvaliacao.REJEITAR,
+  aprovarComRessalvas: RecomendacaoAvaliacao.APROVAR_COM_RESSALVAS,
 }
 
 /**
@@ -70,5 +81,20 @@ export function camelCaseToStatusSubmissao(camelCase: string): StatusSubmissao {
  */
 export function camelCaseToFormatoSubmissao(camelCase: string): FormatoSubmissao {
   return formatoCamelCaseMap[camelCase] || FormatoSubmissao.ARTIGO_COMPLETO
+}
+
+/**
+ * Converte RecomendacaoAvaliacao para camelCase string
+ */
+export function recomendacaoAvaliacaoToCamelCase(recomendacao: RecomendacaoAvaliacao): string {
+  const recomendacaoStr = String(recomendacao);
+  return toCamelCase(recomendacaoStr);
+}
+
+/**
+ * Converte string camelCase de volta para RecomendacaoAvaliacao
+ */
+export function camelCaseToRecomendacaoAvaliacao(camelCase: string): RecomendacaoAvaliacao {
+  return recomendacaoCamelCaseMap[camelCase] || RecomendacaoAvaliacao.APROVAR
 }
 
