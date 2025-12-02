@@ -39,7 +39,7 @@ const configuracaoEventoSchema = z.object({
     .min(1, "Prazo de avaliação é obrigatório"),
   numeroAvaliadoresPorSubmissao: z
     .number()
-    .min(1, "Número de avaliadores deve ser pelo menos 1")
+    .min(3, "O número mínimo de avaliadores por submissão é 3. Isso garante imparcialidade e qualidade na avaliação.")
     .int("Número de avaliadores deve ser um número inteiro"),
 }).refine(
   (data) => {
@@ -87,7 +87,7 @@ export default function ConfiguracaoEventoForm({
     defaultValues: {
       prazoSubmissao: initialData?.prazoSubmissao || "",
       prazoAvaliacao: initialData?.prazoAvaliacao || "",
-      numeroAvaliadoresPorSubmissao: initialData?.numeroAvaliadoresPorSubmissao || 1,
+      numeroAvaliadoresPorSubmissao: initialData?.numeroAvaliadoresPorSubmissao || 3,
     },
   });
 
@@ -187,19 +187,33 @@ export default function ConfiguracaoEventoForm({
                   <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="number"
-                    min="1"
-                    placeholder="1"
+                    min="3"
+                    placeholder="3"
                     className="pl-9"
                     disabled={isLoading || disabled}
                     {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 3)}
                     value={field.value}
                   />
                 </div>
               </FormControl>
               <FormDescription>
-                Quantidade de avaliadores que irão avaliar cada submissão
+                Quantidade de avaliadores que irão avaliar cada submissão. O mínimo é 3 avaliadores para garantir imparcialidade, qualidade e permitir desempate em caso de divergências (padrão em eventos científicos com revisão duplo-cego).
               </FormDescription>
+              {field.value && field.value >= 3 && (
+                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <strong>Próximo passo:</strong> No passo seguinte, você precisará criar um comitê científico com pelo menos <strong>{field.value} avaliadores</strong>. O sistema validará automaticamente esse requisito.
+                  </p>
+                </div>
+              )}
+              {field.value && field.value < 3 && (
+                <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-sm text-amber-800 dark:text-amber-300">
+                    <strong>Atenção:</strong> O número mínimo é 3 avaliadores. Ajuste o valor para continuar.
+                  </p>
+                </div>
+              )}
               <FormMessage />
             </FormItem>
           )}

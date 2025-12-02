@@ -50,6 +50,10 @@ public class ConfiguracaoEventoService
         if (request.PrazoSubmissao < evento.DataInicio)
             throw new BusinessRuleException($"O prazo de submissão ({request.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({evento.DataInicio:dd/MM/yyyy}).");
 
+        // Validar número mínimo de avaliadores por submissão
+        if (request.NumeroAvaliadoresPorSubmissao < 3)
+            throw new BusinessRuleException($"O número mínimo de avaliadores por submissão é 3. Valor informado: {request.NumeroAvaliadoresPorSubmissao}.");
+
         var configuracao = new ConfiguracaoEvento
         {
             PrazoSubmissao = request.PrazoSubmissao,
@@ -68,6 +72,10 @@ public class ConfiguracaoEventoService
 
     public async Task<ConfiguracaoEvento> CreateAsync(ConfiguracaoEventoRequestDTO request, CancellationToken cancellationToken = default)
     {
+        // Validar número mínimo de avaliadores por submissão
+        if (request.NumeroAvaliadoresPorSubmissao < 3)
+            throw new BusinessRuleException($"O número mínimo de avaliadores por submissão é 3. Valor informado: {request.NumeroAvaliadoresPorSubmissao}.");
+
         var configuracao = new ConfiguracaoEvento
         {
             PrazoSubmissao = request.PrazoSubmissao,
@@ -89,6 +97,10 @@ public class ConfiguracaoEventoService
         var evento = await _eventoRepository.FindByConfiguracaoEventoIdAsync(id, cancellationToken);
         if (evento != null && request.PrazoSubmissao < evento.DataInicio)
             throw new BusinessRuleException($"O prazo de submissão ({request.PrazoSubmissao:dd/MM/yyyy}) não pode acontecer antes da data de início do evento ({evento.DataInicio:dd/MM/yyyy}).");
+
+        // Validar número mínimo de avaliadores por submissão
+        if (request.NumeroAvaliadoresPorSubmissao < 3)
+            throw new BusinessRuleException($"O número mínimo de avaliadores por submissão é 3. Valor informado: {request.NumeroAvaliadoresPorSubmissao}.");
 
         configuracao.PrazoSubmissao = request.PrazoSubmissao;
         configuracao.PrazoAvaliacao = request.PrazoAvaliacao;

@@ -125,5 +125,21 @@ public class ConviteAvaliacaoRepository : BaseRepository<ConviteAvaliacao>
             .OrderByDescending(c => c.DataConvite)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<int> CountConvitesAceitosPorSubmissaoAsync(long submissaoId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Set<ConviteAvaliacao>()
+            .Where(c => c.SubmissaoId == submissaoId && c.Aceito == true)
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task<int> CountConvitesAceitosEAvaliadosAsync(long submissaoId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Set<ConviteAvaliacao>()
+            .Where(c => c.SubmissaoId == submissaoId 
+                && c.Aceito == true
+                && _db.Set<Avaliacao>().Any(a => a.SubmissaoId == submissaoId && a.AvaliadorId == c.AvaliadorId))
+            .CountAsync(cancellationToken);
+    }
 }
 

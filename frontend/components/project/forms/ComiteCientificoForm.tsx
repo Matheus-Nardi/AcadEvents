@@ -12,7 +12,9 @@ import {
   Search, 
   Loader2, 
   ArrowLeft,
-  Briefcase
+  Briefcase,
+  AlertCircle,
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,7 +55,7 @@ const comiteCientificoSchema = z.object({
     .min(10, "Descrição deve ter pelo menos 10 caracteres"),
   avaliadoresIds: z
     .array(z.number())
-    .optional(),
+    .min(3, "É necessário adicionar pelo menos 3 avaliadores ao comitê científico"),
   coordenadoresIds: z
     .array(z.number())
     .optional(),
@@ -291,10 +293,43 @@ export default function ComiteCientificoForm({
 
         {/* Seção de Avaliadores */}
         <div className="space-y-4 border rounded-lg p-4">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Avaliadores</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Avaliadores</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              {avaliadores.length >= 3 ? (
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {avaliadores.length} de {Math.max(3, avaliadores.length)} avaliadores
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {avaliadores.length} de 3 avaliadores
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
+          
+          {avaliadores.length < 3 && (
+            <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                  Faltam {3 - avaliadores.length} avaliador(es)
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                  Um comitê científico precisa ter pelo menos 3 avaliadores para garantir uma avaliação adequada e imparcial.
+                </p>
+              </div>
+            </div>
+          )}
           
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -457,7 +492,7 @@ export default function ComiteCientificoForm({
           <Button
             type="submit"
             className="flex-1"
-            disabled={isLoading || disabled}
+            disabled={isLoading || disabled || avaliadores.length < 3}
           >
             {isLoading ? (
               <>

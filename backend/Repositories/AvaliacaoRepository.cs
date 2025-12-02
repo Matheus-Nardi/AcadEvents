@@ -29,5 +29,12 @@ public class AvaliacaoRepository : BaseRepository<Avaliacao>
         return await _db.Set<Avaliacao>()
             .FirstOrDefaultAsync(a => a.AvaliadorId == avaliadorId && a.SubmissaoId == submissaoId, cancellationToken);
     }
+
+    public async Task<int> CountAvaliacoesCompletasPorSubmissaoAsync(long submissaoId, CancellationToken cancellationToken = default)
+    {
+        return await _db.Set<Avaliacao>()
+            .Where(a => a.SubmissaoId == submissaoId)
+            .CountAsync(cancellationToken);
+    }
 }
 

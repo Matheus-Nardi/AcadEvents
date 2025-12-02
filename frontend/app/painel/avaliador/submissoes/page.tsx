@@ -227,16 +227,6 @@ export default function AvaliadorSubmissoesPage() {
 
                   <div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                      <FileText className="h-3 w-3" />
-                      Autor
-                    </div>
-                    <div className="text-sm truncate">
-                      {submissao.autorNome || `ID: ${submissao.autorId}`}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
                       <Tag className="h-3 w-3" />
                       Trilha Temática
                     </div>

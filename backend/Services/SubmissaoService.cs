@@ -18,6 +18,7 @@ public class SubmissaoService
     private readonly IEmailService _emailService;
     private readonly ConviteAvaliacaoRepository _conviteAvaliacaoRepository;
     private readonly ComiteCientificoRepository _comiteCientificoRepository;
+    private readonly AvaliacaoRepository _avaliacaoRepository;
     
     public SubmissaoService(
         SubmissaoRepository submissaoRepository,
@@ -28,7 +29,8 @@ public class SubmissaoService
         ArquivoSubmissaoService arquivoSubmissaoService,
         IEmailService emailService,
         ConviteAvaliacaoRepository conviteAvaliacaoRepository,
-        ComiteCientificoRepository comiteCientificoRepository)
+        ComiteCientificoRepository comiteCientificoRepository,
+        AvaliacaoRepository avaliacaoRepository)
     {
         _submissaoRepository = submissaoRepository;
         _autorRepository = autorRepository;
@@ -39,6 +41,7 @@ public class SubmissaoService
         _emailService = emailService;
         _conviteAvaliacaoRepository = conviteAvaliacaoRepository;
         _comiteCientificoRepository = comiteCientificoRepository;
+        _avaliacaoRepository = avaliacaoRepository;
     }
 
     public Task<List<Submissao>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -262,27 +265,41 @@ public class SubmissaoService
         return await _submissaoRepository.FindForAvaliadorAvaliacaoAsync(avaliadorId, cancellationToken);
     }
 
+    public async Task<bool> ValidarAvaliacoesCompletasAsync(long submissaoId, CancellationToken cancellationToken = default)
+    {
+        var submissao = await _submissaoRepository.FindByIdWithEventoAsync(submissaoId, cancellationToken);
+        if (submissao?.Evento?.Configuracao == null)
+            return false;
+        
+        var numeroRequerido = submissao.Evento.Configuracao.NumeroAvaliadoresPorSubmissao;
+        
+        // Contar avaliações completas para esta submissão
+        var numeroAvaliacoes = await _avaliacaoRepository.CountAvaliacoesCompletasPorSubmissaoAsync(submissaoId, cancellationToken);
+        
+        // Validar se tem pelo menos o número mínimo requerido
+        return numeroAvaliacoes >= numeroRequerido;
+    }
+
     private async Task CriarConvitesParaSubmissaoAsync(long submissaoId, long eventoId, CancellationToken cancellationToken = default)
     {
+        // Buscar configuração do evento para obter o prazo de avaliação e número de avaliadores
+        var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);
+        if (evento?.Configuracao == null)
+            return; // Não há configuração do evento
+        
+        var prazoAvaliacao = evento.Configuracao.PrazoAvaliacao;
+        var numeroRequerido = evento.Configuracao.NumeroAvaliadoresPorSubmissao;
+        
         // Buscar todos os avaliadores dos comitês científicos do evento
         var avaliadores = await _comiteCientificoRepository.FindAvaliadoresDoComiteDoEventoAsync(eventoId, cancellationToken);
         
         if (!avaliadores.Any())
             return; // Não há avaliadores no comitê do evento
         
-        // Buscar configuração do evento para obter o prazo de avaliação
-        var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);
-        if (evento?.Configuracao == null)
-            return; // Não há configuração do evento
-        
-        var prazoAvaliacao = evento.Configuracao.PrazoAvaliacao;
-        
-        // Criar convites para cada avaliador
-        var convites = new List<ConviteAvaliacao>();
-        
+        // Filtrar avaliadores que já receberam convite para esta submissão
+        var avaliadoresDisponiveis = new List<Avaliador>();
         foreach (var avaliador in avaliadores)
         {
-            // Verificar se já existe um convite para este avaliador e submissão
             var conviteExistente = await _conviteAvaliacaoRepository.ExisteConviteAsync(
                 avaliador.Id, 
                 submissaoId, 
@@ -290,18 +307,37 @@ public class SubmissaoService
             
             if (!conviteExistente)
             {
-                convites.Add(new ConviteAvaliacao
-                {
-                    DataConvite = DateTime.UtcNow,
-                    PrazoAvaliacao = prazoAvaliacao,
-                    AvaliadorId = avaliador.Id,
-                    SubmissaoId = submissaoId,
-                    Aceito = null,
-                    MotivoRecusa = string.Empty,
-                    DataResposta = null
-                });
+                avaliadoresDisponiveis.Add(avaliador);
             }
         }
+        
+        // Validar se há avaliadores suficientes no comitê
+        if (avaliadoresDisponiveis.Count < numeroRequerido)
+        {
+            throw new BusinessRuleException(
+                $"Não há avaliadores suficientes no comitê científico. " +
+                $"Requerido: {numeroRequerido}, Disponíveis: {avaliadoresDisponiveis.Count}. " +
+                $"Adicione mais avaliadores ao comitê ou ajuste a configuração do evento.");
+        }
+        
+        // Selecionar aleatoriamente o número requerido de avaliadores
+        var random = new Random();
+        var avaliadoresSelecionados = avaliadoresDisponiveis
+            .OrderBy(x => random.Next())
+            .Take(numeroRequerido)
+            .ToList();
+        
+        // Criar convites apenas para os avaliadores selecionados
+        var convites = avaliadoresSelecionados.Select(avaliador => new ConviteAvaliacao
+        {
+            DataConvite = DateTime.UtcNow,
+            PrazoAvaliacao = prazoAvaliacao,
+            AvaliadorId = avaliador.Id,
+            SubmissaoId = submissaoId,
+            Aceito = null,
+            MotivoRecusa = string.Empty,
+            DataResposta = null
+        }).ToList();
         
         // Criar todos os convites em lote
         if (convites.Any())

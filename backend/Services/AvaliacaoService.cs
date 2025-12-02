@@ -100,6 +100,27 @@ public class AvaliacaoService
             throw new ForbiddenException($"O avaliador {avaliadorId} não faz parte do comitê científico do evento relacionado à submissão.");
         }
 
+        // Validar se já existe uma avaliação deste avaliador para esta submissão
+        var avaliacaoExistente = await _repository.FindByAvaliadorIdAndSubmissaoIdAsync(avaliadorId, request.SubmissaoId, cancellationToken);
+        if (avaliacaoExistente != null)
+        {
+            throw new BusinessRuleException($"O avaliador {avaliadorId} já possui uma avaliação para a submissão {request.SubmissaoId}.");
+        }
+
+        // Validar se o número máximo de avaliações já foi atingido
+        if (submissao.Evento.Configuracao == null)
+        {
+            throw new BadRequestException("Configuração do evento não encontrada.");
+        }
+
+        var numeroAvaliacoes = await _repository.CountAvaliacoesCompletasPorSubmissaoAsync(request.SubmissaoId, cancellationToken);
+        var numeroRequerido = submissao.Evento.Configuracao.NumeroAvaliadoresPorSubmissao;
+
+        if (numeroAvaliacoes >= numeroRequerido)
+        {
+            throw new BusinessRuleException($"Número máximo de avaliações já atingido para esta submissão. Requerido: {numeroRequerido}, Atual: {numeroAvaliacoes}.");
+        }
+
         var avaliacao = new Avaliacao
         {
             DataCriacao = DateTime.Now,

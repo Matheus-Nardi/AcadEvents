@@ -20,6 +20,27 @@ import { ComiteCientificoRequest } from "@/types/comite-cientifico/ComiteCientif
 
 type Step = 1 | 2 | 3;
 
+// Helper function para extrair mensagens de erro do backend
+const getErrorMessage = (error: any, defaultMessage: string): string => {
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+  if (error?.response?.data) {
+    // Se for uma string direta
+    if (typeof error.response.data === 'string') {
+      return error.response.data;
+    }
+    // Se for um objeto com outras propriedades
+    if (error.response.data.title) {
+      return error.response.data.title;
+    }
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  return defaultMessage;
+};
+
 export default function CriarEventoPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -27,6 +48,7 @@ export default function CriarEventoPage() {
   const [eventoData, setEventoData] = React.useState<Partial<EventoRequest> | null>(null);
   const [configuracaoId, setConfiguracaoId] = React.useState<number | null>(null);
   const [eventoId, setEventoId] = React.useState<number | null>(null);
+  const [numeroAvaliadoresPorSubmissao, setNumeroAvaliadoresPorSubmissao] = React.useState<number | null>(null);
 
   const progress = step === 1 ? 33 : step === 2 ? 66 : 100;
 
@@ -44,6 +66,15 @@ export default function CriarEventoPage() {
       // Primeiro, cria a configuração
       const configuracao = await configuracaoEventoService.create(configData);
       setConfiguracaoId(configuracao.id);
+      setNumeroAvaliadoresPorSubmissao(configData.numeroAvaliadoresPorSubmissao);
+      
+      // Mostrar aviso sobre número de avaliadores necessário no comitê
+      if (configData.numeroAvaliadoresPorSubmissao >= 3) {
+        toast.success(
+          `Configuração salva! Agora crie o comitê científico com pelo menos ${configData.numeroAvaliadoresPorSubmissao} avaliadores.`,
+          { duration: 5000 }
+        );
+      }
 
       // Depois, cria o evento com a configuração
       if (!eventoData) {
@@ -76,10 +107,12 @@ export default function CriarEventoPage() {
       toast.success("Evento criado com sucesso! Agora configure o comitê científico.");
       setStep(3);
     } catch (error: any) {
-      const errorMessage = 
-        error?.response?.data?.message || 
-        "Erro ao criar evento. Tente novamente.";
-      toast.error(errorMessage);
+      const errorMessage = getErrorMessage(error, "Erro ao criar evento. Tente novamente.");
+      toast.error(errorMessage, {
+        description: error?.response?.data?.title 
+          ? undefined 
+          : "Verifique os dados informados e tente novamente."
+      });
       throw error;
     }
   };
@@ -101,10 +134,18 @@ export default function CriarEventoPage() {
       toast.success("Comitê científico criado com sucesso!");
       router.push("/painel/organizador");
     } catch (error: any) {
-      const errorMessage = 
-        error?.response?.data?.message || 
-        "Erro ao criar comitê científico. Tente novamente.";
-      toast.error(errorMessage);
+      const errorMessage = getErrorMessage(error, "Erro ao criar comitê científico. Tente novamente.");
+      
+      // Verificar se é erro relacionado a número insuficiente de avaliadores
+      const isAvaliadoresError = errorMessage.includes("avaliadores") || 
+                                  errorMessage.includes("avaliador");
+      
+      toast.error(errorMessage, {
+        description: isAvaliadoresError 
+          ? "Adicione mais avaliadores ao comitê para continuar."
+          : "Verifique os dados informados e tente novamente.",
+        duration: 5000
+      });
       throw error;
     }
   };  
@@ -202,6 +243,14 @@ export default function CriarEventoPage() {
           ) : (
             <div>
               <h2 className="text-xl font-semibold mb-6">Comitê Científico</h2>
+              {numeroAvaliadoresPorSubmissao && numeroAvaliadoresPorSubmissao >= 3 && (
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <strong>Requisito:</strong> Este evento foi configurado para exigir <strong>{numeroAvaliadoresPorSubmissao} avaliadores</strong> por submissão. 
+                    Adicione pelo menos <strong>{numeroAvaliadoresPorSubmissao} avaliadores</strong> ao comitê científico abaixo.
+                  </p>
+                </div>
+              )}
               <ComiteCientificoForm
                 onBack={handleComiteBack}
                 onSubmit={handleComiteSubmit}

@@ -76,6 +76,25 @@ public class ComiteCientificoService
             }
         }
 
+        // Validar número mínimo de avaliadores (3)
+        if (avaliadores.Count < 3)
+        {
+            throw new BusinessRuleException(
+                $"Um comitê científico deve ter pelo menos 3 avaliadores. Atualmente: {avaliadores.Count} avaliador(es).");
+        }
+
+        // Validar que o número de avaliadores atende ao requisito da configuração do evento
+        if (evento.Configuracao != null)
+        {
+            var numeroRequeridoPorSubmissao = evento.Configuracao.NumeroAvaliadoresPorSubmissao;
+            if (avaliadores.Count < numeroRequeridoPorSubmissao)
+            {
+                throw new BusinessRuleException(
+                    $"O comitê científico deve ter pelo menos {numeroRequeridoPorSubmissao} avaliadores, conforme configurado no evento. " +
+                    $"Atualmente: {avaliadores.Count} avaliador(es).");
+            }
+        }
+
         // Validar coordenadores se fornecidos
         var coordenadores = new List<Organizador> { organizador }; // O criador é automaticamente coordenador
         if (request.CoordenadoresIds != null && request.CoordenadoresIds.Any())

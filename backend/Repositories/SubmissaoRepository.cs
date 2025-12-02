@@ -12,6 +12,7 @@ public class SubmissaoRepository : BaseRepository<Submissao>
     {
         return await _db.Submissoes
             .Include(s => s.Evento)
+                .ThenInclude(e => e.Configuracao)
             .Include(s => s.TrilhaTematica)
                 .ThenInclude(tt => tt.Trilha)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
