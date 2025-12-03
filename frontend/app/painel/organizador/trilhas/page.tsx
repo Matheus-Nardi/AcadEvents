@@ -8,7 +8,6 @@ import {
   Plus, 
   Loader2,
   User,
-  Hash,
   ArrowLeft
 } from "lucide-react";
 import { trilhaService } from "@/lib/services/trilha/TrilhaService";
@@ -160,14 +159,6 @@ export default function TrilhasPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-muted-foreground">Coordenador:</p>
                     <p className="font-medium">{trilha.coordenador}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2 text-sm">
-                  <Hash className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-muted-foreground">Limite de Submissões:</p>
-                    <p className="font-medium">{trilha.limiteSubmissoes}</p>
                   </div>
                 </div>
               </CardContent>

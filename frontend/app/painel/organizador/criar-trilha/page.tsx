@@ -43,7 +43,6 @@ export default function CriarTrilhaPage() {
         nome: trilhaData.nome!,
         descricao: trilhaData.descricao!,
         coordenador: trilhaData.coordenador!,
-        limiteSubmissoes: trilhaData.limiteSubmissoes!,
       } as TrilhaRequest);
       
       setTrilhaId(trilha.id);

@@ -4,7 +4,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { FileText, User, Hash } from "lucide-react";
+import { FileText, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -31,10 +31,6 @@ const trilhaSchema = z.object({
     .string()
     .min(1, "Coordenador é obrigatório")
     .min(3, "Nome do coordenador deve ter pelo menos 3 caracteres"),
-  limiteSubmissoes: z
-    .number()
-    .min(1, "Limite de submissões deve ser pelo menos 1")
-    .int("Limite de submissões deve ser um número inteiro"),
 });
 
 type TrilhaFormValues = z.infer<typeof trilhaSchema>;
@@ -56,7 +52,6 @@ export default function TrilhaForm({
       nome: initialData?.nome || "",
       descricao: initialData?.descricao || "",
       coordenador: initialData?.coordenador || "",
-      limiteSubmissoes: initialData?.limiteSubmissoes || 1,
     },
   });
 
@@ -111,58 +106,27 @@ export default function TrilhaForm({
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="coordenador"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Coordenador</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Nome do coordenador"
-                      className="pl-9"
-                      disabled={disabled}
-                      {...field}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="limiteSubmissoes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Limite de Submissões</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      min="1"
-                      placeholder="1"
-                      className="pl-9"
-                      disabled={disabled}
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                      value={field.value}
-                    />
-                  </div>
-                </FormControl>
-                <FormDescription>
-                  Número máximo de submissões permitidas nesta trilha
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="coordenador"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Coordenador</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Nome do coordenador"
+                    className="pl-9"
+                    disabled={disabled}
+                    {...field}
+                  />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Button 
           type="submit" 

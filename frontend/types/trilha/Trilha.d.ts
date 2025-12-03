@@ -3,7 +3,6 @@ export interface Trilha {
   nome: string;
   descricao: string;
   coordenador: string;
-  limiteSubmissoes: number;
   eventoId?: number;
 }
 
