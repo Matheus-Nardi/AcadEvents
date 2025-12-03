@@ -82,22 +82,19 @@ export default function CriarEventoPage() {
         return;
       }
 
-      // Converte trilhaId e trilhaTematicaId de string para number (obrigatórios)
+      // Converte trilhaId de string para number (obrigatório)
       const trilhaId = typeof eventoData.trilhaId === 'string' 
         ? parseInt(eventoData.trilhaId) 
         : eventoData.trilhaId!;
-      const trilhaTematicaId = typeof eventoData.trilhaTematicaId === 'string'
-        ? parseInt(eventoData.trilhaTematicaId)
-        : eventoData.trilhaTematicaId!;
 
       // Cria o evento (organizadorId é extraído do token JWT)
+      // Nota: trilhaId é removido pelo serviço antes de enviar ao backend
       const evento = await eventoService.create({
         ...eventoData,
         configuracaoEventoId: configuracao.id,
         site: eventoData.site || "",
         logo: eventoData.logo || "",
         trilhaId: trilhaId,
-        trilhaTematicaId: trilhaTematicaId,
       } as EventoRequest);
 
       // Associa a trilha ao evento
@@ -226,7 +223,6 @@ export default function CriarEventoPage() {
                     ? {
                         ...eventoData,
                         trilhaId: eventoData.trilhaId?.toString() || "",
-                        trilhaTematicaId: eventoData.trilhaTematicaId?.toString() || "",
                       }
                     : undefined
                 }

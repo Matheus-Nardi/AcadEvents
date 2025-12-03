@@ -78,9 +78,12 @@ class EventoService {
 
   async create(eventoRequest: EventoRequest): Promise<Evento> {
     try {
+      // Remove trilhaId do request, pois a associação é feita separadamente
+      const { trilhaId, ...requestData } = eventoRequest;
+      
       const response = await axios.post(
         `${this.getApiUrl()}/evento`,
-        eventoRequest,
+        requestData,
         {
           headers: this.getAuthHeaders()
         }

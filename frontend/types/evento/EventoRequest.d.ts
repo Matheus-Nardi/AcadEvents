@@ -8,6 +8,5 @@ export interface EventoRequest {
   logo: string;
   configuracaoEventoId: number;
   trilhaId: number;
-  trilhaTematicaId: number;
 }
 
