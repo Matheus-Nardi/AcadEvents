@@ -247,7 +247,7 @@ public class AvaliacaoController : ControllerBase
     }
 
     [HttpGet("submissao/{submissaoId}")]
-    [Authorize(Roles = "Avaliador, Autor")]
+    [Authorize(Roles = "Avaliador, Autor, Organizador")]
     public async Task<ActionResult<List<AvaliacaoResponseDTO>>> GetAvaliacoesPorSubmissao(
         long submissaoId,
         CancellationToken cancellationToken = default)
