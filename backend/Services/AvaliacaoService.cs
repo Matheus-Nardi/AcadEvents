@@ -159,7 +159,40 @@ public class AvaliacaoService
         if (submissao.Evento?.Configuracao == null) return;
 
         var numeroRequerido = submissao.Evento.Configuracao.NumeroAvaliadoresPorSubmissao;
-        if (avaliacoes.Count < numeroRequerido) return;
+        
+        // NOVO: Contar convites ACEITOS primeiro - garante que temos avaliadores comprometidos
+        var convitesAceitos = await _conviteAvaliacaoRepository.CountConvitesAceitosPorSubmissaoAsync(
+            submissaoId, cancellationToken);
+        
+        // Se não tem convites aceitos suficientes, não pode calcular status final
+        // Mas atualiza para EM_AVALIACAO se já tiver alguma avaliação
+        if (convitesAceitos < numeroRequerido)
+        {
+            // Atualiza status para EM_AVALIACAO se já iniciou o processo
+            if (avaliacoes.Any() && submissao.Status == StatusSubmissao.SUBMETIDA)
+            {
+                submissao.Status = StatusSubmissao.EM_AVALIACAO;
+                await _submissaoRepository.UpdateAsync(submissao, cancellationToken);
+            }
+            // Não calcula status final - ainda faltam avaliadores comprometidos
+            return; 
+        }
+
+        // Tem convites aceitos suficientes, agora verifica se já tem avaliações suficientes
+        if (avaliacoes.Count < numeroRequerido)
+        {
+            // Tem avaliadores comprometidos, mas ainda não entregaram todas as avaliações
+            // Mantém EM_AVALIACAO
+            if (submissao.Status != StatusSubmissao.EM_AVALIACAO)
+            {
+                submissao.Status = StatusSubmissao.EM_AVALIACAO;
+                await _submissaoRepository.UpdateAsync(submissao, cancellationToken);
+            }
+            return; // Aguarda avaliações pendentes
+        }
+
+        // TEM tudo: convites aceitos suficientes + avaliações suficientes
+        // Agora pode calcular o status final
 
         // Contar recomendações
         var aprovar = avaliacoes.Count(a => a.RecomendacaoEnum == RecomendacaoAvaliacao.APROVAR);

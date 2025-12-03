@@ -18,12 +18,25 @@ import {
   MapPin,
   Plus,
   Search,
-  UserCheck
+  UserCheck,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  AlertTriangle
 } from "lucide-react";
 import { comiteCientificoService } from "@/lib/services/comite-cientifico/ComiteCientificoService";
 import { avaliadorService } from "@/lib/services/usuario/AvaliadorService";
 import { organizadorService } from "@/lib/services/usuario/OrganizadorService";
+import { submissaoService } from "@/lib/services/submissao/SubmissaoService";
 import { ComiteCientifico } from "@/types/comite-cientifico/ComiteCientifico";
+import { Submissao } from "@/types/submissao/Submissao";
+import { StatusAvaliacao } from "@/types/submissao/StatusAvaliacao";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -88,6 +101,9 @@ export default function ComiteCientificoDetailsPage() {
   const [emailInput, setEmailInput] = React.useState("");
   const [isSearching, setIsSearching] = React.useState(false);
   const [isAdding, setIsAdding] = React.useState(false);
+  const [submissoes, setSubmissoes] = React.useState<Submissao[]>([]);
+  const [statusAvaliacoes, setStatusAvaliacoes] = React.useState<Record<number, StatusAvaliacao>>({});
+  const [loadingSubmissoes, setLoadingSubmissoes] = React.useState(false);
 
   React.useEffect(() => {
     const fetchComite = async () => {
@@ -115,6 +131,41 @@ export default function ComiteCientificoDetailsPage() {
 
     fetchComite();
   }, [comiteId, router]);
+
+  React.useEffect(() => {
+    const fetchSubmissoes = async () => {
+      if (!comite?.eventoId) return;
+
+      try {
+        setLoadingSubmissoes(true);
+        const data = await submissaoService.getByEventoId(comite.eventoId);
+        setSubmissoes(data);
+
+        // Buscar status de avaliação para cada submissão
+        const statusMap: Record<number, StatusAvaliacao> = {};
+        await Promise.all(
+          data.map(async (submissao) => {
+            try {
+              const status = await submissaoService.getStatusAvaliacao(submissao.id);
+              statusMap[submissao.id] = status;
+            } catch (error) {
+              console.error(`Erro ao buscar status da submissão ${submissao.id}:`, error);
+            }
+          })
+        );
+        setStatusAvaliacoes(statusMap);
+      } catch (error: any) {
+        console.error("Erro ao buscar submissões:", error);
+        toast.error("Erro ao carregar submissões do evento");
+      } finally {
+        setLoadingSubmissoes(false);
+      }
+    };
+
+    if (comite?.eventoId) {
+      fetchSubmissoes();
+    }
+  }, [comite?.eventoId]);
 
   const fetchComiteData = async () => {
     try {
@@ -445,6 +496,179 @@ export default function ComiteCientificoDetailsPage() {
                 <div className="text-center py-8 text-muted-foreground">
                   <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Nenhum coordenador associado a este comitê</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Submissões do Evento */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Submissões do Evento ({submissoes.length})
+              </CardTitle>
+              <CardDescription>
+                Visualize o status de avaliação de cada submissão
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingSubmissoes ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : submissoes.length > 0 ? (
+                <Accordion type="single" collapsible className="w-full">
+                  {submissoes.map((submissao) => {
+                    const status = statusAvaliacoes[submissao.id];
+                    const temProblema = status?.faltamAvaliadores || (status?.avaliacoesPendentes ?? 0) > 0;
+                    
+                    return (
+                      <AccordionItem key={submissao.id} value={`submissao-${submissao.id}`}>
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-start justify-between w-full pr-4">
+                            <div className="flex-1 text-left">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-medium">{submissao.titulo}</p>
+                                {temProblema && (
+                                  <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground line-clamp-1">
+                                {submissao.resumo}
+                              </p>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-4 pt-2">
+                            {/* Informações básicas */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Status da Submissão</p>
+                                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                  {submissao.status}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">ID</p>
+                                <p className="text-sm font-medium">#{submissao.id}</p>
+                              </div>
+                            </div>
+
+                            {/* Status de Avaliação */}
+                            {status && (
+                              <div className="border rounded-lg p-4 space-y-3">
+                                <h4 className="font-semibold text-sm flex items-center gap-2">
+                                  <FileText className="h-4 w-4" />
+                                  Status de Avaliação
+                                </h4>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Requerido</p>
+                                    <p className="text-lg font-bold">{status.numeroRequerido}</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Aceitos</p>
+                                    <div className="flex items-center gap-1">
+                                      <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                                        {status.convitesAceitos}
+                                      </p>
+                                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Recusados</p>
+                                    <div className="flex items-center gap-1">
+                                      <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                                        {status.convitesRecusados}
+                                      </p>
+                                      <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Pendentes</p>
+                                    <div className="flex items-center gap-1">
+                                      <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                                        {status.convitesPendentes}
+                                      </p>
+                                      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Avaliações Completas</p>
+                                    <p className="text-lg font-bold">{status.avaliacoesCompletas}</p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Avaliações Pendentes</p>
+                                    <p className="text-lg font-bold">{status.avaliacoesPendentes}</p>
+                                  </div>
+                                </div>
+
+                                {/* Alertas */}
+                                {status.faltamAvaliadores && (
+                                  <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                                    <div className="flex items-start gap-2">
+                                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                                      <div className="flex-1">
+                                        <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                                          Atenção: Faltam {status.quantidadeFaltante} avaliador(es)
+                                        </p>
+                                        <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                                          Esta submissão não atingiu o número mínimo de avaliações. Considere adicionar mais avaliadores ao comitê.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {status.avaliacoesPendentes > 0 && !status.faltamAvaliadores && (
+                                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                    <div className="flex items-start gap-2">
+                                      <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                                      <div className="flex-1">
+                                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                                          Aguardando {status.avaliacoesPendentes} avaliação(ões)
+                                        </p>
+                                        <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                                          Alguns avaliadores ainda não finalizaram suas avaliações.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {status.podeCalcularStatus && (
+                                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                    <div className="flex items-start gap-2">
+                                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                                      <div className="flex-1">
+                                        <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                                          Pronto para calcular status final
+                                        </p>
+                                        <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                                          Todas as avaliações necessárias foram concluídas.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma submissão encontrada para este evento</p>
                 </div>
               )}
             </CardContent>

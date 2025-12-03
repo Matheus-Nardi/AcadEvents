@@ -456,5 +456,164 @@ public static class EmailTemplateService
 </body>
 </html>";
     }
+
+    public static string ConviteRecusadoTemplate(
+        string nomeOrganizador,
+        string nomeAvaliador,
+        string tituloSubmissao,
+        string motivoRecusa,
+        int quantidadeFaltante,
+        int numeroRequerido)
+    {
+        var alertaTexto = quantidadeFaltante > 0 
+            ? $"⚠️ <strong>Atenção:</strong> Faltam <strong>{quantidadeFaltante}</strong> avaliação(ões) para atingir o mínimo de {numeroRequerido} avaliações por submissão."
+            : "O número mínimo de avaliações já foi atingido.";
+
+        var alertaCor = quantidadeFaltante > 0 ? "#f44336" : "#4caf50";
+
+        return $@"
+<!DOCTYPE html>
+<html lang=""pt-BR"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>Convite Recusado - AcadEvents</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }}
+        .container {{
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
+        }}
+        .header h1 {{
+            color: #f44336;
+            margin: 0;
+        }}
+        .content {{
+            margin-bottom: 30px;
+        }}
+        .alert-box {{
+            background-color: #ffebee;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid {alertaCor};
+        }}
+        .alert-box h3 {{
+            color: {alertaCor};
+            margin-top: 0;
+        }}
+        .info-box {{
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }}
+        .info-row {{
+            margin: 10px 0;
+            padding: 8px 0;
+        }}
+        .info-label {{
+            font-weight: bold;
+            color: #2c3e50;
+            display: inline-block;
+            width: 180px;
+        }}
+        .info-value {{
+            color: #34495e;
+        }}
+        .motivo-box {{
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }}
+        .action-box {{
+            background-color: #e3f2fd;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }}
+        .action-box h3 {{
+            color: #1976d2;
+            margin-top: 0;
+        }}
+        .footer {{
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }}
+    </style>
+</head>
+<body>
+    <div class=""container"">
+        <div class=""header"">
+            <h1>🔔 Convite de Avaliação Recusado</h1>
+        </div>
+        <div class=""content"">
+            <p>Olá <strong>{nomeOrganizador}</strong>,</p>
+            <p>Informamos que um avaliador recusou o convite para avaliar uma submissão no evento que você organiza.</p>
+            
+            <div class=""info-box"">
+                <h2>Detalhes da Submissão</h2>
+                <div class=""info-row"">
+                    <span class=""info-label"">Título:</span>
+                    <span class=""info-value"">{tituloSubmissao}</span>
+                </div>
+                <div class=""info-row"">
+                    <span class=""info-label"">Avaliador:</span>
+                    <span class=""info-value"">{nomeAvaliador}</span>
+                </div>
+            </div>
+
+            <div class=""alert-box"">
+                <h3>{alertaTexto}</h3>
+            </div>
+
+            <div class=""motivo-box"">
+                <p><strong>Motivo da Recusa:</strong></p>
+                <p>{motivoRecusa}</p>
+            </div>
+
+            <div class=""action-box"">
+                <h3>📋 Ação Necessária</h3>
+                <p>Para garantir que a submissão tenha o número mínimo de avaliações necessárias ({numeroRequerido}), você pode:</p>
+                <ul>
+                    <li>Adicionar um novo avaliador ao comitê científico do evento</li>
+                    <li>O novo avaliador receberá automaticamente convites para todas as submissões pendentes</li>
+                    <li>Acompanhar o status das avaliações no painel do organizador</li>
+                </ul>
+                <p><strong>Acesse o painel do organizador</strong> para gerenciar o comitê científico e adicionar novos avaliadores quando necessário.</p>
+            </div>
+
+            <p>Se você tiver alguma dúvida, não hesite em entrar em contato conosco.</p>
+        </div>
+        <div class=""footer"">
+            <p>Este é um email automático, por favor não responda.</p>
+            <p>&copy; {DateTime.Now.Year} AcadEvents - Plataforma de Eventos Acadêmicos</p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
 }
 

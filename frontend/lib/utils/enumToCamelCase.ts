@@ -73,7 +73,34 @@ export function formatoSubmissaoToCamelCase(formato: FormatoSubmissao): string {
  * Converte string camelCase de volta para StatusSubmissao
  */
 export function camelCaseToStatusSubmissao(camelCase: string): StatusSubmissao {
-  return statusCamelCaseMap[camelCase] || StatusSubmissao.SUBMETIDA
+  // Se for undefined ou null, retorna SUBMETIDA
+  if (!camelCase) {
+    console.warn('Status vazio ou undefined recebido, usando SUBMETIDA como padrão');
+    return StatusSubmissao.SUBMETIDA;
+  }
+
+  // Normaliza para lowercase para garantir comparação correta
+  const normalized = camelCase.toLowerCase().trim();
+  
+  // Busca no mapa (também normalizado)
+  const mappedStatus = statusCamelCaseMap[normalized];
+  
+  if (mappedStatus !== undefined) {
+    return mappedStatus;
+  }
+
+  // Se não encontrou, tenta mapear diretamente os valores do enum
+  // Caso o backend retorne em formato diferente (ex: "APROVADA_COM_RESSALVAS")
+  const upperCaseValue = camelCase.toUpperCase();
+  if (upperCaseValue in StatusSubmissao) {
+    return StatusSubmissao[upperCaseValue as keyof typeof StatusSubmissao] as StatusSubmissao;
+  }
+
+  // Log para debug quando não encontrar o status
+  console.warn(`Status não mapeado recebido: "${camelCase}". Usando SUBMETIDA como padrão.`);
+  console.warn('Valores disponíveis no mapa:', Object.keys(statusCamelCaseMap));
+  
+  return StatusSubmissao.SUBMETIDA;
 }
 
 /**

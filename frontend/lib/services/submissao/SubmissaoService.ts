@@ -6,6 +6,7 @@ import { SubmissaoRequestApi } from '@/types/submissao/SubmissaoRequestApi';
 import { SubmissaoCreateCompleteResult } from '@/types/submissao/SubmissaoCreateCompleteResult';
 import { DecidirStatusRevisaoRequest } from '@/types/submissao/DecidirStatusRevisaoRequest';
 import { VerificarSubmissaoAutor } from '@/types/submissao/VerificarSubmissaoAutor';
+import { StatusAvaliacao } from '@/types/submissao/StatusAvaliacao';
 import { 
   statusSubmissaoToCamelCase, 
   formatoSubmissaoToCamelCase,
@@ -81,9 +82,20 @@ class SubmissaoService {
         }
       );
       // Converte os enums de camelCase para o formato do frontend
+      const statusConvertido = camelCaseToStatusSubmissao(response.data.status);
+      
+      // Log para debug do problema de status
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[SubmissaoService] Submissão ${id}:`, {
+          statusRecebido: response.data.status,
+          statusConvertido: statusConvertido,
+          tipoStatusRecebido: typeof response.data.status
+        });
+      }
+      
       return {
         ...response.data,
-        status: camelCaseToStatusSubmissao(response.data.status),
+        status: statusConvertido,
         formato: camelCaseToFormatoSubmissao(response.data.formato),
       };
     } catch (error) {
@@ -110,6 +122,41 @@ class SubmissaoService {
       }));
     } catch (error) {
       console.error(`Erro ao buscar submissões da trilha temática ${trilhaTematicaId}:`, error);
+      throw error;
+    }
+  }
+
+  async getByEventoId(eventoId: number): Promise<Submissao[]> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/submissao/evento/${eventoId}`,
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      // Converte os enums de camelCase para o formato do frontend
+      return response.data.map((submissao: any) => ({
+        ...submissao,
+        status: camelCaseToStatusSubmissao(submissao.status),
+        formato: camelCaseToFormatoSubmissao(submissao.formato),
+      }));
+    } catch (error) {
+      console.error(`Erro ao buscar submissões do evento ${eventoId}:`, error);
+      throw error;
+    }
+  }
+
+  async getStatusAvaliacao(submissaoId: number): Promise<StatusAvaliacao> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/submissao/${submissaoId}/status-avaliacao`,
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Erro ao buscar status de avaliação da submissão ${submissaoId}:`, error);
       throw error;
     }
   }

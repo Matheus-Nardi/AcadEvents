@@ -2,6 +2,7 @@ using AcadEvents.Models;
 using AcadEvents.Repositories;
 using AcadEvents.Dtos;
 using AcadEvents.Exceptions;
+using AcadEvents.Services.EmailTemplates;
 
 namespace AcadEvents.Services;
 
@@ -14,6 +15,7 @@ public class ConviteAvaliacaoService
     private readonly ComiteCientificoRepository _comiteCientificoRepository;
     private readonly AvaliadorRepository _avaliadorRepository;
     private readonly AvaliacaoRepository _avaliacaoRepository;
+    private readonly IEmailService _emailService;
 
     public ConviteAvaliacaoService(
         ConviteAvaliacaoRepository repository,
@@ -22,7 +24,8 @@ public class ConviteAvaliacaoService
         OrganizadorRepository organizadorRepository,
         ComiteCientificoRepository comiteCientificoRepository,
         AvaliadorRepository avaliadorRepository,
-        AvaliacaoRepository avaliacaoRepository)
+        AvaliacaoRepository avaliacaoRepository,
+        IEmailService emailService)
     {
         _repository = repository;
         _submissaoRepository = submissaoRepository;
@@ -31,6 +34,7 @@ public class ConviteAvaliacaoService
         _comiteCientificoRepository = comiteCientificoRepository;
         _avaliadorRepository = avaliadorRepository;
         _avaliacaoRepository = avaliacaoRepository;
+        _emailService = emailService;
     }
 
     public async Task<ConviteAvaliacao> FindByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -232,99 +236,71 @@ public class ConviteAvaliacaoService
         if (convite.AvaliadorId != avaliadorId)
             throw new ForbiddenException("Este convite não pertence ao avaliador autenticado.");
         
-        var submissaoId = convite.SubmissaoId;
-        
         // Recusar o convite
         var conviteRecusado = await _repository.RecusarConviteAsync(conviteId, avaliadorId, motivoRecusa, cancellationToken);
         if (conviteRecusado == null)
             throw new BadRequestException("Erro ao recusar convite.");
         
-        // Tentar repor convite se necessário
+        // Notificar organizadores sobre a recusa
         try
         {
-            await ReporConviteRecusadoAsync(submissaoId, cancellationToken);
+            await NotificarOrganizadoresSobreRecusaAsync(conviteRecusado, motivoRecusa, cancellationToken);
         }
         catch
         {
-            // Erro na reposição não deve quebrar o fluxo principal
+            // Erro no envio de email não deve quebrar o fluxo principal
             // O convite já foi recusado com sucesso
         }
         
         return conviteRecusado;
     }
 
-    private async Task ReporConviteRecusadoAsync(long submissaoId, CancellationToken cancellationToken = default)
+    private async Task NotificarOrganizadoresSobreRecusaAsync(
+        ConviteAvaliacao convite, 
+        string motivoRecusa,
+        CancellationToken cancellationToken = default)
     {
-        // Buscar a submissão com evento e configuração
-        var submissao = await _submissaoRepository.FindByIdWithEventoAsync(submissaoId, cancellationToken);
-        if (submissao?.Evento?.Configuracao == null)
-            return; // Não há configuração para validar
-        
-        var eventoId = submissao.EventoId;
-        var numeroRequerido = submissao.Evento.Configuracao.NumeroAvaliadoresPorSubmissao;
-        var prazoAvaliacao = submissao.Evento.Configuracao.PrazoAvaliacao;
-        
-        // Contar convites aceitos ativos (que ainda não resultaram em avaliação completa)
-        var convitesAceitos = await _repository.CountConvitesAceitosPorSubmissaoAsync(submissaoId, cancellationToken);
-        
-        // Calcular quantos convites faltam
-        var numeroFaltante = numeroRequerido - convitesAceitos;
-        
-        if (numeroFaltante <= 0)
-            return; // Já tem convites suficientes aceitos
-        
-        // Contar total de convites já enviados para esta submissão (incluindo recusados)
-        var todosConvites = await _repository.FindBySubmissaoIdAsync(submissaoId, cancellationToken);
-        var totalTentativas = todosConvites.Count;
-        var limiteTentativas = numeroRequerido * 3; // Limite de 3x o número requerido
-        
-        // Se já tentou muitas vezes, parar de repor automaticamente
-        if (totalTentativas >= limiteTentativas)
+        // Buscar submissão com evento e organizadores
+        var submissao = await _submissaoRepository.FindByIdWithEventoAsync(convite.SubmissaoId, cancellationToken);
+        if (submissao?.Evento?.Organizadores == null)
+            return; // Não há organizadores para notificar
+
+        // Buscar avaliador
+        var avaliador = await _avaliadorRepository.FindByIdAsync(convite.AvaliadorId, cancellationToken);
+        if (avaliador == null)
+            return; // Não encontrou o avaliador
+
+        // Calcular avaliações faltantes
+        var numeroRequerido = submissao.Evento.Configuracao?.NumeroAvaliadoresPorSubmissao ?? 0;
+        var convitesAceitos = await _repository.CountConvitesAceitosPorSubmissaoAsync(convite.SubmissaoId, cancellationToken);
+        var avaliacoesCompletas = await _avaliacaoRepository.CountAvaliacoesCompletasPorSubmissaoAsync(convite.SubmissaoId, cancellationToken);
+        var quantidadeFaltante = numeroRequerido - convitesAceitos;
+
+        // Enviar email para cada organizador do evento
+        foreach (var organizador in submissao.Evento.Organizadores)
         {
-            // Parar reposição automática - organizador precisará enviar manualmente
-            return;
-        }
-        
-        // Buscar avaliadores disponíveis (sem convite para esta submissão)
-        var avaliadoresDoComite = await _comiteCientificoRepository.FindAvaliadoresDoComiteDoEventoAsync(eventoId, cancellationToken);
-        
-        var avaliadoresDisponiveis = new List<Avaliador>();
-        foreach (var avaliador in avaliadoresDoComite)
-        {
-            var conviteExistente = await _repository.ExisteConviteAsync(avaliador.Id, submissaoId, cancellationToken);
-            if (!conviteExistente)
+            try
             {
-                avaliadoresDisponiveis.Add(avaliador);
+                var emailBody = EmailTemplateService.ConviteRecusadoTemplate(
+                    organizador.Nome,
+                    avaliador.Nome,
+                    submissao.Titulo,
+                    motivoRecusa,
+                    quantidadeFaltante,
+                    numeroRequerido);
+                
+                await _emailService.SendEmailAsync(
+                    organizador.Email,
+                    $"🔔 Convite Recusado - Submissão: {submissao.Titulo}",
+                    emailBody,
+                    isHtml: true,
+                    cancellationToken);
             }
-        }
-        
-        // Se não há avaliadores disponíveis, não é possível repor
-        if (!avaliadoresDisponiveis.Any())
-            return;
-        
-        // Selecionar aleatoriamente o número faltante de avaliadores (ou todos se houver menos)
-        var random = new Random();
-        var quantidadeParaSelecionar = Math.Min(numeroFaltante, avaliadoresDisponiveis.Count);
-        var avaliadoresSelecionados = avaliadoresDisponiveis
-            .OrderBy(x => random.Next())
-            .Take(quantidadeParaSelecionar)
-            .ToList();
-        
-        // Criar novos convites
-        var novosConvites = avaliadoresSelecionados.Select(avaliador => new ConviteAvaliacao
-        {
-            DataConvite = DateTime.UtcNow,
-            PrazoAvaliacao = prazoAvaliacao,
-            AvaliadorId = avaliador.Id,
-            SubmissaoId = submissaoId,
-            Aceito = null,
-            MotivoRecusa = string.Empty,
-            DataResposta = null
-        }).ToList();
-        
-        if (novosConvites.Any())
-        {
-            await _repository.CreateBulkAsync(novosConvites, cancellationToken);
+            catch
+            {
+                // Log error, mas não quebra o fluxo
+                // Continua tentando enviar para os outros organizadores
+            }
         }
     }
 

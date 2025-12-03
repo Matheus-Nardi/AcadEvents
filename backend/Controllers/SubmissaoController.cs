@@ -39,6 +39,17 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         return Ok(response);
     }
 
+    [HttpGet("evento/{eventoId}")]
+    [Authorize(Roles = "Organizador")]
+    public async Task<ActionResult<List<SubmissaoResponseDTO>>> GetByEvento(
+        long eventoId,
+        CancellationToken cancellationToken = default)
+    {
+        var submissoes = await submissaoService.GetByEventoIdAsync(eventoId, cancellationToken);
+        var response = submissoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
+        return Ok(response);
+    }
+
     [HttpGet("autor/minhas")]
     [Authorize(Roles = "Autor")]
     public async Task<ActionResult<List<SubmissaoResponseDTO>>> GetMinhasSubmissoes(
@@ -261,6 +272,26 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         var submissao = await submissaoService.DecidirStatusRevisaoAsync(id, organizadorId, request, cancellationToken);
         var response = SubmissaoResponseDTO.ValueOf(submissao);
         return Ok(response);
+    }
+
+    [HttpGet("{id:long}/status-avaliacao")]
+    [Authorize(Roles = "Organizador")]
+    public async Task<ActionResult<StatusAvaliacaoDTO>> GetStatusAvaliacao(
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        // Extrair o ID do organizador do token JWT
+        var userIdString = User.FindFirstValue(JwtRegisteredClaimNames.Sub) 
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+            
+        if (string.IsNullOrEmpty(userIdString) || !long.TryParse(userIdString, out long organizadorId))
+        {
+            return Unauthorized(new { message = "Token JWT inválido: ID do organizador não encontrado no token." });
+        }
+
+        var status = await submissaoService.GetStatusAvaliacaoAsync(id, cancellationToken);
+        return Ok(status);
     }
 }
 

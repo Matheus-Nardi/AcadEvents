@@ -80,6 +80,17 @@ public class SubmissaoService
         return await _submissaoRepository.FindByAutorIdAsync(autorId, cancellationToken);
     }
 
+    public async Task<List<Submissao>> GetByEventoIdAsync(long eventoId, CancellationToken cancellationToken = default)
+    {
+        // Validar que o evento existe
+        if (!await _eventoRepository.ExistsAsync(eventoId, cancellationToken))
+        {
+            throw new NotFoundException("Evento", eventoId);
+        }
+
+        return await _submissaoRepository.FindByEventoIdAsync(eventoId, cancellationToken);
+    }
+
     public async Task<Submissao> CreateAsync(SubmissaoRequestDTO request, long autorId, CancellationToken cancellationToken = default)
     {
         await ValidateReferencesAsync(request, autorId, cancellationToken);
@@ -335,6 +346,44 @@ public class SubmissaoService
         
         // Validar se tem pelo menos o número mínimo requerido
         return numeroAvaliacoes >= numeroRequerido;
+    }
+
+    public async Task<StatusAvaliacaoDTO> GetStatusAvaliacaoAsync(long submissaoId, CancellationToken cancellationToken = default)
+    {
+        var submissao = await _submissaoRepository.FindByIdWithEventoAsync(submissaoId, cancellationToken);
+        if (submissao == null)
+            throw new NotFoundException("Submissão", submissaoId);
+
+        var numeroRequerido = submissao.Evento?.Configuracao?.NumeroAvaliadoresPorSubmissao ?? 0;
+        
+        // Contar convites por status
+        var todosConvites = await _conviteAvaliacaoRepository.FindBySubmissaoIdAsync(submissaoId, cancellationToken);
+        
+        var convitesAceitos = todosConvites.Count(c => c.Aceito == true);
+        var convitesRecusados = todosConvites.Count(c => c.Aceito == false);
+        var convitesPendentes = todosConvites.Count(c => c.Aceito == null);
+        
+        // Contar avaliações
+        var avaliacoesCompletas = await _avaliacaoRepository.CountAvaliacoesCompletasPorSubmissaoAsync(
+            submissaoId, cancellationToken);
+        
+        var avaliacoesPendentes = convitesAceitos - avaliacoesCompletas;
+        var faltantes = numeroRequerido - convitesAceitos;
+
+        return new StatusAvaliacaoDTO
+        {
+            SubmissaoId = submissaoId,
+            NumeroRequerido = numeroRequerido,
+            ConvitesAceitos = convitesAceitos,
+            ConvitesRecusados = convitesRecusados,
+            ConvitesPendentes = convitesPendentes,
+            AvaliacoesCompletas = avaliacoesCompletas,
+            AvaliacoesPendentes = avaliacoesPendentes,
+            FaltamAvaliadores = faltantes > 0,
+            QuantidadeFaltante = Math.Max(0, faltantes),
+            PodeCalcularStatus = convitesAceitos >= numeroRequerido && 
+                                 avaliacoesCompletas >= numeroRequerido
+        };
     }
 
     private async Task CriarConvitesParaSubmissaoAsync(long submissaoId, long eventoId, CancellationToken cancellationToken = default)
