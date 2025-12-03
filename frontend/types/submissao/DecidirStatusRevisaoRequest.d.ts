@@ -1,6 +1,5 @@
 import { StatusSubmissao } from './StatusSubmissao';
 
 export interface DecidirStatusRevisaoRequest {
-  status: StatusSubmissao;
+  status: StatusSubmissao.APROVADA | StatusSubmissao.REJEITADA;
 }
-

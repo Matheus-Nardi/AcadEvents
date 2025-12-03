@@ -615,5 +615,132 @@ public static class EmailTemplateService
 </body>
 </html>";
     }
+
+    public static string SubmissaoEmRevisaoTemplate(
+        string nomeOrganizador,
+        string tituloSubmissao,
+        string nomeEvento,
+        long submissaoId)
+    {
+        return $@"
+<!DOCTYPE html>
+<html lang=""pt-BR"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>Decisão Final Necessária - Submissão em Revisão - AcadEvents</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }}
+        .container {{
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
+        }}
+        .header h1 {{
+            color: #e67e22;
+            margin: 0;
+        }}
+        .content {{
+            margin-bottom: 30px;
+        }}
+        .info-box {{
+            background-color: #fff3cd;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }}
+        .info-box h2 {{
+            color: #856404;
+            margin-top: 0;
+        }}
+        .highlight {{
+            background-color: #e8f5e9;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4caf50;
+        }}
+        .highlight h3 {{
+            color: #2e7d32;
+            margin-top: 0;
+        }}
+        .action-box {{
+            background-color: #fce4ec;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #e91e63;
+            text-align: center;
+        }}
+        .action-box h3 {{
+            color: #c2185b;
+            margin-top: 0;
+        }}
+        .footer {{
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }}
+    </style>
+</head>
+<body>
+    <div class=""container"">
+        <div class=""header"">
+            <h1>⚠️ Decisão Final Necessária</h1>
+        </div>
+        <div class=""content"">
+            <p>Olá <strong>{nomeOrganizador}</strong>,</p>
+            <p>Uma submissão requer sua <strong>decisão final como organizador do evento</strong>.</p>
+            
+            <div class=""info-box"">
+                <h2>{tituloSubmissao}</h2>
+                <p><strong>Evento:</strong> {nomeEvento}</p>
+                <p><strong>Status Atual:</strong> <span style=""color: #e67e22; font-weight: bold;"">EM REVISÃO</span></p>
+            </div>
+
+            <div class=""highlight"">
+                <h3>📋 Situação da Submissão</h3>
+                <p>Esta submissão está com <strong>status EM_REVISÃO</strong>, o que significa que houve um empate nas avaliações (50% de aprovação e 50% de rejeição).</p>
+                <p>Como organizador do evento, você precisa decidir o destino final desta submissão:</p>
+                <ul>
+                    <li><strong>Aprovar:</strong> A submissão será aceita no evento</li>
+                    <li><strong>Rejeitar:</strong> A submissão será rejeitada e não participará do evento</li>
+                </ul>
+            </div>
+
+            <div class=""action-box"">
+                <h3>⚡ Ação Requerida</h3>
+                <p><strong>Sua decisão é essencial para o andamento do evento!</strong></p>
+                <p>Acesse o painel do organizador e visualize a submissão para tomar sua decisão informada.</p>
+            </div>
+
+            <p>Por favor, acesse o painel do organizador e revise a submissão para tomar sua decisão final.</p>
+            <p>Se você tiver alguma dúvida, não hesite em entrar em contato conosco.</p>
+        </div>
+        <div class=""footer"">
+            <p>Este é um email automático, por favor não responda.</p>
+            <p>&copy; {DateTime.Now.Year} AcadEvents - Plataforma de Eventos Acadêmicos</p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
 }
 

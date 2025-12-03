@@ -31,6 +31,8 @@ import { submissaoService } from "@/lib/services/submissao/SubmissaoService";
 import { ComiteCientifico } from "@/types/comite-cientifico/ComiteCientifico";
 import { Submissao } from "@/types/submissao/Submissao";
 import { StatusAvaliacao } from "@/types/submissao/StatusAvaliacao";
+import { StatusSubmissao } from "@/types/submissao/StatusSubmissao";
+import { DecidirStatusRevisaoRequest } from "@/types/submissao/DecidirStatusRevisaoRequest";
 import {
   Accordion,
   AccordionContent,
@@ -104,6 +106,11 @@ export default function ComiteCientificoDetailsPage() {
   const [submissoes, setSubmissoes] = React.useState<Submissao[]>([]);
   const [statusAvaliacoes, setStatusAvaliacoes] = React.useState<Record<number, StatusAvaliacao>>({});
   const [loadingSubmissoes, setLoadingSubmissoes] = React.useState(false);
+  const [modalDecisaoAberto, setModalDecisaoAberto] = React.useState(false);
+  const [submissaoDecisao, setSubmissaoDecisao] = React.useState<Submissao | null>(null);
+  const [carregandoDecisao, setCarregandoDecisao] = React.useState(false);
+  const [submissaoCompleta, setSubmissaoCompleta] = React.useState<Submissao | null>(null);
+  const [carregandoSubmissaoCompleta, setCarregandoSubmissaoCompleta] = React.useState(false);
 
   React.useEffect(() => {
     const fetchComite = async () => {
@@ -251,6 +258,64 @@ export default function ComiteCientificoDetailsPage() {
     if (e.key === "Enter") {
       e.preventDefault();
       handleBuscarEAdicionar();
+    }
+  };
+
+  const handleAbrirModalDecisao = async (submissao: Submissao) => {
+    setSubmissaoDecisao(submissao);
+    setModalDecisaoAberto(true);
+    setCarregandoSubmissaoCompleta(true);
+    
+    try {
+      const submissaoCompleta = await submissaoService.getById(submissao.id);
+      setSubmissaoCompleta(submissaoCompleta);
+    } catch (error: any) {
+      console.error("Erro ao carregar submissão completa:", error);
+      toast.error("Erro ao carregar detalhes da submissão");
+    } finally {
+      setCarregandoSubmissaoCompleta(false);
+    }
+  };
+
+  const handleDecidirStatus = async (novoStatus: StatusSubmissao.APROVADA | StatusSubmissao.REJEITADA) => {
+    if (!submissaoDecisao) return;
+
+    try {
+      setCarregandoDecisao(true);
+      const request: DecidirStatusRevisaoRequest = { status: novoStatus };
+      await submissaoService.decidirStatusRevisao(submissaoDecisao.id, request);
+      
+      toast.success(`Submissão ${novoStatus === StatusSubmissao.APROVADA ? 'aprovada' : 'rejeitada'} com sucesso!`);
+      
+      // Atualizar a lista de submissões
+      if (comite?.eventoId) {
+        const data = await submissaoService.getByEventoId(comite.eventoId);
+        setSubmissoes(data);
+
+        // Atualizar status de avaliação
+        const statusMap: Record<number, StatusAvaliacao> = {};
+        await Promise.all(
+          data.map(async (sub) => {
+            try {
+              const status = await submissaoService.getStatusAvaliacao(sub.id);
+              statusMap[sub.id] = status;
+            } catch (error) {
+              console.error(`Erro ao buscar status da submissão ${sub.id}:`, error);
+            }
+          })
+        );
+        setStatusAvaliacoes(statusMap);
+      }
+
+      setModalDecisaoAberto(false);
+      setSubmissaoDecisao(null);
+      setSubmissaoCompleta(null);
+    } catch (error: any) {
+      console.error("Erro ao decidir status:", error);
+      const errorMessage = error?.response?.data?.message || "Erro ao processar decisão. Tente novamente.";
+      toast.error(errorMessage);
+    } finally {
+      setCarregandoDecisao(false);
     }
   };
 
@@ -556,6 +621,30 @@ export default function ComiteCientificoDetailsPage() {
                               </div>
                             </div>
 
+                            {/* Botão de decisão quando status for EM_REVISÃO */}
+                            {submissao.status === StatusSubmissao.EM_REVISÃO && (
+                              <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                                <div className="flex items-start gap-3">
+                                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">
+                                      Decisão Final Necessária
+                                    </p>
+                                    <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
+                                      Esta submissão está em revisão devido a um empate nas avaliações. Como organizador, você precisa tomar a decisão final.
+                                    </p>
+                                    <Button
+                                      onClick={() => handleAbrirModalDecisao(submissao)}
+                                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                                    >
+                                      <FileText className="h-4 w-4 mr-2" />
+                                      Visualizar e Decidir
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                             {/* Status de Avaliação */}
                             {status && (
                               <div className="border rounded-lg p-4 space-y-3">
@@ -720,6 +809,137 @@ export default function ComiteCientificoDetailsPage() {
 
         </div>
       </div>
+
+      {/* Modal de Decisão de Revisão */}
+      <Dialog 
+        open={modalDecisaoAberto} 
+        onOpenChange={(open) => {
+          setModalDecisaoAberto(open);
+          if (!open) {
+            setSubmissaoDecisao(null);
+            setSubmissaoCompleta(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              Decisão Final - Submissão em Revisão
+            </DialogTitle>
+            <DialogDescription>
+              Visualize a submissão e tome a decisão final de aprovação ou rejeição
+            </DialogDescription>
+          </DialogHeader>
+
+          {carregandoSubmissaoCompleta ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : submissaoCompleta ? (
+            <div className="space-y-6">
+              {/* Informações da Submissão */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{submissaoCompleta.titulo}</CardTitle>
+                  <CardDescription>ID: #{submissaoCompleta.id}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Resumo</p>
+                    <p className="text-sm">{submissaoCompleta.resumo}</p>
+                  </div>
+                  
+                  {submissaoCompleta.palavrasChave && submissaoCompleta.palavrasChave.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Palavras-chave</p>
+                      <div className="flex flex-wrap gap-2">
+                        {submissaoCompleta.palavrasChave.map((palavra, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-block rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
+                          >
+                            {palavra}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Status Atual</p>
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                        EM REVISÃO
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Data de Submissão</p>
+                      <p className="text-sm font-medium">
+                        {new Date(submissaoCompleta.dataSubmissao).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Informações de Contexto */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Contexto da Decisão</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                      Esta submissão está com status <strong>EM_REVISÃO</strong> devido a um empate nas avaliações (50% aprovaram e 50% rejeitaram).
+                      Como organizador do evento, sua decisão final é essencial para o andamento do processo.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Botões de Ação */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setModalDecisaoAberto(false)}
+                  disabled={carregandoDecisao}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDecidirStatus(StatusSubmissao.REJEITADA)}
+                  disabled={carregandoDecisao}
+                >
+                  {carregandoDecisao ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <XCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Rejeitar Submissão
+                </Button>
+                <Button
+                  onClick={() => handleDecidirStatus(StatusSubmissao.APROVADA)}
+                  disabled={carregandoDecisao}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {carregandoDecisao ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  )}
+                  Aprovar Submissão
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">Erro ao carregar submissão</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de Adicionar Membro */}
       <Dialog 

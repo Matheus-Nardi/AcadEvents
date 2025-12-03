@@ -2,6 +2,7 @@
 using AcadEvents.Repositories;
 using AcadEvents.Dtos;
 using AcadEvents.Exceptions;
+using AcadEvents.Services.EmailTemplates;
 
 namespace AcadEvents.Services;
 
@@ -12,19 +13,25 @@ public class AvaliacaoService
     private readonly AvaliadorRepository _avaliadorRepository;
     private readonly ConviteAvaliacaoRepository _conviteAvaliacaoRepository;
     private readonly ComiteCientificoRepository _comiteCientificoRepository;
+    private readonly EventoRepository _eventoRepository;
+    private readonly IEmailService _emailService;
 
     public AvaliacaoService(
         AvaliacaoRepository repository,
         SubmissaoRepository submissaoRepository,
         AvaliadorRepository avaliadorRepository,
         ConviteAvaliacaoRepository conviteAvaliacaoRepository,
-        ComiteCientificoRepository comiteCientificoRepository)
+        ComiteCientificoRepository comiteCientificoRepository,
+        EventoRepository eventoRepository,
+        IEmailService emailService)
     {
         _repository = repository;
         _submissaoRepository = submissaoRepository;
         _avaliadorRepository = avaliadorRepository;
         _conviteAvaliacaoRepository = conviteAvaliacaoRepository;
         _comiteCientificoRepository = comiteCientificoRepository;
+        _eventoRepository = eventoRepository;
+        _emailService = emailService;
     }
 
     public async Task<Avaliacao> FindByIdAsync(long id, CancellationToken cancellationToken = default)
@@ -248,7 +255,57 @@ public class AvaliacaoService
         }
 
         // Atualizar status da submissão
+        var statusAnterior = submissao.Status;
         submissao.Status = novoStatus;
         await _submissaoRepository.UpdateAsync(submissao, cancellationToken);
+
+        // Se o status mudou para EM_REVISÃO, enviar email para organizadores
+        if (novoStatus == StatusSubmissao.EM_REVISÃO && statusAnterior != StatusSubmissao.EM_REVISÃO)
+        {
+            await NotificarOrganizadoresSobreRevisaoAsync(submissao, cancellationToken);
+        }
+    }
+
+    private async Task NotificarOrganizadoresSobreRevisaoAsync(
+        Submissao submissao,
+        CancellationToken cancellationToken)
+    {
+        if (submissao.EventoId == 0) return;
+
+        try
+        {
+            // Buscar evento com organizadores
+            var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(submissao.EventoId, cancellationToken);
+            if (evento?.Organizadores == null || !evento.Organizadores.Any()) return;
+
+            // Enviar email para cada organizador
+            foreach (var organizador in evento.Organizadores)
+            {
+                try
+                {
+                    var emailBody = EmailTemplateService.SubmissaoEmRevisaoTemplate(
+                        organizador.Nome,
+                        submissao.Titulo,
+                        evento.Nome,
+                        submissao.Id);
+
+                    await _emailService.SendEmailAsync(
+                        organizador.Email,
+                        $"Decisão Final Necessária - Submissão: {submissao.Titulo}",
+                        emailBody,
+                        isHtml: true,
+                        cancellationToken);
+                }
+                catch
+                {
+                    // Erro no envio de email não deve quebrar o fluxo principal
+                    // Log pode ser adicionado aqui se necessário
+                }
+            }
+        }
+        catch
+        {
+            // Erro ao buscar evento ou enviar email não deve quebrar o fluxo principal
+        }
     }
 }

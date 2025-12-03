@@ -417,7 +417,7 @@ public class SubmissaoService
             }
         }
         
-        // Validar se há avaliadores suficientes no comitê
+        // Validar se há pelo menos o número mínimo de avaliadores no comitê
         if (avaliadoresDisponiveis.Count < numeroRequerido)
         {
             throw new BusinessRuleException(
@@ -426,15 +426,10 @@ public class SubmissaoService
                 $"Adicione mais avaliadores ao comitê ou ajuste a configuração do evento.");
         }
         
-        // Selecionar aleatoriamente o número requerido de avaliadores
-        var random = new Random();
-        var avaliadoresSelecionados = avaliadoresDisponiveis
-            .OrderBy(x => random.Next())
-            .Take(numeroRequerido)
-            .ToList();
-        
-        // Criar convites apenas para os avaliadores selecionados
-        var convites = avaliadoresSelecionados.Select(avaliador => new ConviteAvaliacao
+        // Criar convites para TODOS os avaliadores disponíveis do comitê
+        // Isso garante que mesmo com recusas, ainda haverá avaliadores suficientes
+        // e evita o ciclo infinito de adicionar mais avaliadores manualmente
+        var convites = avaliadoresDisponiveis.Select(avaliador => new ConviteAvaliacao
         {
             DataConvite = DateTime.UtcNow,
             PrazoAvaliacao = prazoAvaliacao,
