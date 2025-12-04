@@ -184,11 +184,11 @@ export default function HomePage() {
               {eventosAtivos.slice(0, 6).map((evento) => (
                 <Card 
                   key={evento.id} 
-                  className="hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer group"
+                  className="flex flex-col h-full hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer group"
                   onClick={() => router.push(`/eventos/${evento.id}`)}
                 >
                   {evento.logo && (
-                    <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
+                    <div className="relative h-48 w-full overflow-hidden rounded-t-lg shrink-0">
                       <img
                         src={evento.logo}
                         alt={evento.nome}
@@ -199,7 +199,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   )}
-                  <CardHeader className={!evento.logo ? "pb-3" : ""}>
+                  <CardHeader className={!evento.logo ? "pb-3 shrink-0" : "shrink-0"}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <CardTitle className="text-xl mb-2 line-clamp-2 group-hover:text-primary transition-colors">
@@ -217,7 +217,7 @@ export default function HomePage() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-3">
+                  <CardContent className="flex-1 space-y-3">
                     <div className="flex items-start gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -254,7 +254,7 @@ export default function HomePage() {
                     )}
                   </CardContent>
 
-                  <CardFooter className="border-t pt-4">
+                  <CardFooter className="border-t pt-4 shrink-0">
                     <Button
                       variant="default"
                       className="w-full group-hover:bg-primary/90"
@@ -307,11 +307,11 @@ export default function HomePage() {
               {filteredEventos.map((evento) => (
                 <Card 
                   key={evento.id} 
-                  className="hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                  className="flex flex-col h-full hover:shadow-lg transition-all duration-300 cursor-pointer group"
                   onClick={() => router.push(`/eventos/${evento.id}`)}
                 >
                   {evento.logo && (
-                    <div className="relative h-40 w-full overflow-hidden rounded-t-lg">
+                    <div className="relative h-40 w-full overflow-hidden rounded-t-lg shrink-0">
                       <img
                         src={evento.logo}
                         alt={evento.nome}
@@ -322,7 +322,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   )}
-                  <CardHeader className={!evento.logo ? "pb-3" : ""}>
+                  <CardHeader className={!evento.logo ? "pb-3 shrink-0" : "shrink-0"}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <CardTitle className="text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
@@ -340,7 +340,7 @@ export default function HomePage() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-3">
+                  <CardContent className="flex-1 space-y-3">
                     <div className="flex items-start gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -377,7 +377,7 @@ export default function HomePage() {
                     )}
                   </CardContent>
 
-                  <CardFooter className="border-t pt-4">
+                  <CardFooter className="border-t pt-4 shrink-0">
                     <Button
                       variant="outline"
                       className="w-full group-hover:border-primary group-hover:text-primary"
