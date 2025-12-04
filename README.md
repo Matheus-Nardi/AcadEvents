@@ -2,6 +2,48 @@
 
 Uma plataforma completa para gerenciamento de eventos acadêmicos. O sistema permite que organizadores criem e gerenciem eventos científicos, autores submetam trabalhos acadêmicos, e avaliadores revisem e avaliem submissões de forma estruturada e eficiente.
 
+## ✨ Funcionalidades
+
+- **Gestão de Eventos:** Criação e configuração de eventos.
+- **Submissão de Trabalhos:** Autores podem enviar artigos  associados a áreas temáticas.
+- **Revisão:** Sistema de avaliação (*Double Blind Review*) para os revisores.
+- **Controle de Acesso:** Perfis distintos para  Organizadores, Autores e Avaliadores.
+- **Autenticação:** Login e registro via JWT.
+- **Envio de Email:** Disparo de e-mails para confirmação de cadastro, status de submissões e resultados de avaliações.
+
+## 📸 Screenshots
+
+<div align="center">
+
+### Login
+
+<img src="./.github/images/print 01.png" alt="Dashboard Principal" width="900"/>
+
+</div>
+
+---
+
+<div align="center">
+
+### Outras Telas
+
+<table>
+  <tr>
+    <td align="center">
+      <strong>Interface de Eventos</strong>
+      <br/>
+      <img src="./.github/images/print 02.png" alt="Interface de Eventos" width="450"/>
+    </td>
+    <td align="center">
+      <strong>Gestão de Submissões</strong>
+      <br/>
+      <img src="./.github/images/print 03.png" alt="Gestão de Submissões" width="450"/>
+    </td>
+  </tr>
+</table>
+
+</div>
+
 ## Stack Utilizada
 
 ### Backend
@@ -16,22 +58,16 @@ Uma plataforma completa para gerenciamento de eventos acadêmicos. O sistema per
 <span>
 <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js">
 <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
+<img src="https://img.shields.io/badge/shadcn%2Fui-000?style=for-the-badge&logo=shadcnui&logoColor=fff" alt="Shadcn">
 <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
 <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
 </span>
 
-### DevOps & Ferramentas
+### DevOps
 <span>
 <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
-<img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white" alt="JWT">
 </span>
 
-
-
-### 📖 Documentação de API
-- **Documentação interativa** com Scalar
-- Endpoints documentados e testáveis
-- Interface moderna para exploração da API
 
 ## 🏗️ Estrutura de Pastas
 
@@ -43,7 +79,9 @@ O projeto segue a seguinte estrutura de pastas:
         /Controllers      # Endpoints da API REST
         /Data             # DbContext e configuração do Entity Framework
         /Dtos             # Data Transfer Objects
+        /Exceptions       # Exceções personalizadas
         /Extensions       # Extensões e configurações
+        /Handlers         # Responsável pelo tratamento centralizado das exceções API
         /Migrations       # Migrations do Entity Framework
         /Models           # Entidades do domínio
         /Repositories     # Camada de acesso aos dados
@@ -71,7 +109,7 @@ O projeto segue a seguinte estrutura de pastas:
 1. **Clone o repositório:**
 
 ```sh
-git clone <url-do-repositorio>
+git clone https://github.com/Matheus-Nardi/AcadEvents.git
 cd AcadEvents
 ```
 
@@ -89,14 +127,13 @@ Isso irá subir:
 3. **Acesse a aplicação:**
 
 - Frontend: `http://localhost:3000`
-- Backend API: `http://localhost:8080`
 - Documentação da API (Scalar): `http://localhost:8080/scalar/v1` (em desenvolvimento)
 
 ## 📄 Licença
 
 Este projeto foi desenvolvido para fins acadêmicos.
 
-Desenvolvido como parte do trabalho prático da disciplina de Tópicos Especiais em Programação III.
+Desenvolvido como parte do trabalho prático da disciplina de Tópicos em Programação III.
 
 
 **AcadEvents** - Simplificando a gestão de eventos acadêmicos 🎓
