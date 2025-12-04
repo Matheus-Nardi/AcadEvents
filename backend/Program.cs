@@ -95,6 +95,9 @@ builder.Services.AddAuthorization();
 // Injeção de dependência dos repositórios
 builder.Services.Inject();
 
+// Registrar o serviço de atualização de status de eventos em background
+builder.Services.AddHostedService<EventoStatusUpdateService>();
+
 var app = builder.Build();
 
 // Aplicar migrations automaticamente
