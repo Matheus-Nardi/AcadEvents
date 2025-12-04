@@ -206,15 +206,7 @@ public class ConviteAvaliacaoService
         var submissao = await _submissaoRepository.FindByIdWithEventoAsync(convite.SubmissaoId, cancellationToken);
         if (submissao?.Evento?.Configuracao == null)
             throw new BadRequestException("Submissão ou configuração do evento não encontrada.");
-        
-        var numeroAvaliacoes = await _avaliacaoRepository.CountAvaliacoesCompletasPorSubmissaoAsync(convite.SubmissaoId, cancellationToken);
-        var numeroRequerido = submissao.Evento.Configuracao.NumeroAvaliadoresPorSubmissao;
-        
-        if (numeroAvaliacoes >= numeroRequerido)
-        {
-            throw new BusinessRuleException($"Número máximo de avaliadores já atingido para esta submissão. Requerido: {numeroRequerido}, Atual: {numeroAvaliacoes}.");
-        }
-        
+     
         // Aceitar o convite
         var conviteAceito = await _repository.AceitarConviteAsync(conviteId, avaliadorId, cancellationToken);
         if (conviteAceito == null)

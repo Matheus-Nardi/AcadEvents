@@ -470,9 +470,11 @@ export default function EventoDetailsPage() {
                                   // 1. Prazo não expirou e evento não terminou
                                   // 2. Não existe submissão OU existe submissão com status APROVADA_COM_RESSALVAS
                                   const podeFazerSubmissao = verificacao?.podeFazerSubmissao ?? false;
+                                  const podeRefazerSubmissao = verificacao?.existeSubmissao && 
+                                    verificacao.status === StatusSubmissao.APROVADA_COM_RESSALVAS;
                                   const submissaoPermitida = !prazoSubmissaoExpirado && 
                                     !eventoTerminado && 
-                                    podeFazerSubmissao;
+                                    (podeFazerSubmissao || podeRefazerSubmissao);
 
                                   return (
                                     <CardContent>
@@ -500,7 +502,8 @@ export default function EventoDetailsPage() {
                                                 ? "O prazo de submissão expirou"
                                                 : eventoTerminado 
                                                 ? "O evento já terminou"
-                                                : verificacao?.existeSubmissao && !verificacao.podeFazerSubmissao
+                                                : verificacao?.existeSubmissao && 
+                                                  verificacao.status !== StatusSubmissao.APROVADA_COM_RESSALVAS
                                                 ? "Você já possui uma submissão para esta trilha temática"
                                                 : "Submissão não permitida"}
                                             </p>
