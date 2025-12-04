@@ -12,5 +12,6 @@ export interface SubmissaoRequest {
   formato: FormatoSubmissao;
   eventoId: number;
   trilhaTematicaId: number;
+  submissaoOriginalId?: number;
 }
 

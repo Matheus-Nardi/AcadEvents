@@ -17,5 +17,6 @@ export interface Submissao {
   trilhaTematicaNome?: string;
   sessaoId?: number;
   doiId?: number;
+  submissaoOriginalId?: number;
 }
 

@@ -134,6 +134,13 @@ public class AcadEventsDbContext : DbContext
             .HasForeignKey<Submissao>(s => s.DOIId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Submissao -> SubmissaoOriginal (auto-referencial para histórico de versões)
+        modelBuilder.Entity<Submissao>()
+            .HasOne(s => s.SubmissaoOriginal)
+            .WithMany(s => s.Versoes)
+            .HasForeignKey(s => s.SubmissaoOriginalId)
+            .OnDelete(DeleteBehavior.NoAction); // NoAction para evitar problemas de cascade
+
         // Configuração de relacionamento muitos-para-muitos
         // Trilha <-> Evento (N:N)
         modelBuilder.Entity<Trilha>()
@@ -282,6 +289,9 @@ public class AcadEventsDbContext : DbContext
 
         modelBuilder.Entity<Submissao>()
             .HasIndex(s => s.TrilhaTematicaId);
+
+        modelBuilder.Entity<Submissao>()
+            .HasIndex(s => s.SubmissaoOriginalId);
     }
 }
 

@@ -17,6 +17,7 @@ public record SubmissaoRequestDTO
     public FormatoSubmissao Formato { get; init; }
     public long EventoId { get; init; }
     public long TrilhaTematicaId { get; init; }
+    public long? SubmissaoOriginalId { get; init; }
 }
 
 

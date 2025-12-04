@@ -13,5 +13,6 @@ export interface SubmissaoRequestApi {
   formato: string; // Enum como string em camelCase (ex: "artigoCompleto", "workshop")
   eventoId: number;
   trilhaTematicaId: number;
+  submissaoOriginalId?: number;
 }
 

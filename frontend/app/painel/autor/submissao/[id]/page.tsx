@@ -37,6 +37,7 @@ import { submissaoService } from "@/lib/services/submissao/SubmissaoService";
 import { referenciaService } from "@/lib/services/referencia/ReferenciaService";
 import { arquivoSubmissaoService } from "@/lib/services/submissao/ArquivoSubmissaoService";
 import { avaliacaoService } from "@/lib/services/avaliacao/AvaliacaoService";
+import { HistoricoVersoes } from "@/components/project/submissao/HistoricoVersoes";
 import { Submissao } from "@/types/submissao/Submissao";
 import { Referencia } from "@/types/referencia/Referencia";
 import { ArquivoSubmissao } from "@/types/submissao/ArquivoSubmissao";
@@ -821,6 +822,13 @@ export default function SubmissaoDetailsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Histórico de Versões */}
+          <HistoricoVersoes 
+            submissaoId={submissao.id} 
+            currentVersao={submissao.versao}
+            isAutor={true}
+          />
         </div>
       </div>
     </div>

@@ -82,6 +82,18 @@ export function EtapaInformacoesBasicas({
     },
   })
 
+  // Atualizar o formulário quando defaultValues mudarem (útil para resubmissões)
+  React.useEffect(() => {
+    if (defaultValues) {
+      form.reset({
+        titulo: defaultValues.titulo || "",
+        resumo: defaultValues.resumo || "",
+        palavrasChave: palavrasChaveInicial,
+        formato: defaultValues.formato,
+      })
+    }
+  }, [defaultValues, palavrasChaveInicial, form])
+
   const palavrasChaveValue = form.watch("palavrasChave")
   const [tagInput, setTagInput] = React.useState("")
 

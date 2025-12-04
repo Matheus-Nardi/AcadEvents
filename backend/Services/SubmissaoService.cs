@@ -175,6 +175,7 @@ public class SubmissaoService
         entity.AutorId = autorId;
         entity.EventoId = request.EventoId;
         entity.TrilhaTematicaId = request.TrilhaTematicaId;
+        entity.SubmissaoOriginalId = request.SubmissaoOriginalId;
         // SessaoId e DOIId não são mais definidos na criação
         // entity.SessaoId = null;
         // entity.DOIId = null;
@@ -201,6 +202,22 @@ public class SubmissaoService
         if (trilhaTematica == null)
         {
             throw new NotFoundException("Trilha temática", request.TrilhaTematicaId);
+        }
+
+        // 4. Validar SubmissaoOriginalId se fornecido (para resubmissões)
+        if (request.SubmissaoOriginalId.HasValue)
+        {
+            var submissaoOriginal = await _submissaoRepository.FindByIdAsync(request.SubmissaoOriginalId.Value, cancellationToken);
+            if (submissaoOriginal == null)
+            {
+                throw new NotFoundException("Submissão original", request.SubmissaoOriginalId.Value);
+            }
+
+            // Validar que a submissão original pertence ao mesmo autor
+            if (submissaoOriginal.AutorId != autorId)
+            {
+                throw new ForbiddenException("A submissão original não pertence ao autor autenticado.");
+            }
         }
 
         // Validações de SessaoId e DOIId removidas - não são mais necessárias na criação
@@ -484,6 +501,19 @@ public class SubmissaoService
 
         submissao.Status = request.Status;
         return await _submissaoRepository.UpdateAsync(submissao, cancellationToken);
+    }
+
+    public async Task<List<Submissao>> GetVersoesSubmissaoAsync(
+        long submissaoId, 
+        CancellationToken cancellationToken = default)
+    {
+        // Validar que a submissão existe
+        if (!await _submissaoRepository.ExistsAsync(submissaoId, cancellationToken))
+        {
+            throw new NotFoundException("Submissão", submissaoId);
+        }
+
+        return await _submissaoRepository.FindVersoesPorSubmissaoAsync(submissaoId, cancellationToken);
     }
 }
 

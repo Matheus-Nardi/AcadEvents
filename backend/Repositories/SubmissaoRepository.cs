@@ -81,5 +81,27 @@ public class SubmissaoRepository : BaseRepository<Submissao>
             .OrderByDescending(s => s.DataSubmissao)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<List<Submissao>> FindVersoesPorSubmissaoAsync(
+        long submissaoId, 
+        CancellationToken cancellationToken = default)
+    {
+        // Buscar a submissão para descobrir o ID da original
+        var submissao = await FindByIdAsync(submissaoId, cancellationToken);
+        if (submissao == null)
+            return new List<Submissao>();
+
+        // Se tem SubmissaoOriginalId, busca pela original
+        // Se não tem, é a original - busca por ela mesma e suas versões
+        var idOriginal = submissao.SubmissaoOriginalId ?? submissao.Id;
+
+        return await _db.Submissoes
+            .Include(s => s.Autor)
+            .Include(s => s.TrilhaTematica)
+            .Where(s => s.Id == idOriginal || s.SubmissaoOriginalId == idOriginal)
+            .OrderBy(s => s.Versao)
+            .ThenBy(s => s.DataSubmissao)
+            .ToListAsync(cancellationToken);
+    }
 }
 

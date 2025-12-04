@@ -116,6 +116,16 @@ public class SubmissaoController(SubmissaoService submissaoService) : Controller
         return Ok(resultado);
     }
 
+    [HttpGet("{id:long}/versoes")]
+    public async Task<ActionResult<List<SubmissaoResponseDTO>>> GetVersoes(
+        long id,
+        CancellationToken cancellationToken = default)
+    {
+        var versoes = await submissaoService.GetVersoesSubmissaoAsync(id, cancellationToken);
+        var response = versoes.Select(SubmissaoResponseDTO.ValueOf).ToList();
+        return Ok(response);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Autor")]
     public async Task<ActionResult<SubmissaoResponseDTO>> Create(

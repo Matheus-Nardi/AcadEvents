@@ -33,6 +33,13 @@ public class Submissao : DefaultModel
     public long? DOIId { get; set; }
     public DOI? DOI { get; set; }
 
+    // Relacionamento: 1 Submissao -> 0..1 SubmissaoOriginal (para histórico de versões)
+    public long? SubmissaoOriginalId { get; set; }
+    public Submissao? SubmissaoOriginal { get; set; }
+    
+    // Relacionamento Inverso: 1 Submissao -> * Versoes (submissões que apontam para esta como original)
+    public ICollection<Submissao> Versoes { get; set; } = new List<Submissao>();
+
     // Relacionamento: 1 Submissao -> 1..* ArquivoSubmissao
     public ICollection<ArquivoSubmissao> Arquivos { get; set; } = new List<ArquivoSubmissao>();
 

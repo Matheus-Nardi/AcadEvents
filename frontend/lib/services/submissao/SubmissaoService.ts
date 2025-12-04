@@ -243,6 +243,7 @@ class SubmissaoService {
         formato: formatoStr,
         eventoId: request.eventoId,
         trilhaTematicaId: request.trilhaTematicaId,
+        submissaoOriginalId: request.submissaoOriginalId,
       };
       
       const response = await axios.post(
@@ -282,6 +283,7 @@ class SubmissaoService {
         formato: formatoStr,
         eventoId: request.eventoId,
         trilhaTematicaId: request.trilhaTematicaId,
+        submissaoOriginalId: request.submissaoOriginalId,
       };
       
       const response = await axios.put(
@@ -338,6 +340,7 @@ class SubmissaoService {
         formato: formatoStr,
         eventoId: request.eventoId,
         trilhaTematicaId: request.trilhaTematicaId,
+        submissaoOriginalId: request.submissaoOriginalId,
       };
 
       // Cria FormData
@@ -421,6 +424,26 @@ class SubmissaoService {
       };
     } catch (error) {
       console.error(`Erro ao decidir status de revisão da submissão ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async getVersoes(submissaoId: number): Promise<Submissao[]> {
+    try {
+      const response = await axios.get(
+        `${this.getApiUrl()}/submissao/${submissaoId}/versoes`,
+        {
+          headers: this.getAuthHeaders()
+        }
+      );
+      
+      return response.data.map((submissao: any) => ({
+        ...submissao,
+        status: camelCaseToStatusSubmissao(submissao.status),
+        formato: camelCaseToFormatoSubmissao(submissao.formato),
+      }));
+    } catch (error) {
+      console.error(`Erro ao buscar versões da submissão ${submissaoId}:`, error);
       throw error;
     }
   }

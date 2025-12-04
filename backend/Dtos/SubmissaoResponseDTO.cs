@@ -19,6 +19,7 @@ public record SubmissaoResponseDTO
     public string? TrilhaTematicaNome { get; init; }
     public long? SessaoId { get; init; }
     public long? DOIId { get; init; }
+    public long? SubmissaoOriginalId { get; init; }
 
     public static SubmissaoResponseDTO ValueOf(Submissao submissao)
     {
@@ -38,7 +39,8 @@ public record SubmissaoResponseDTO
             TrilhaTematicaId = submissao.TrilhaTematicaId,
             TrilhaTematicaNome = submissao.TrilhaTematica?.Nome,
             SessaoId = submissao.SessaoId,
-            DOIId = submissao.DOIId
+            DOIId = submissao.DOIId,
+            SubmissaoOriginalId = submissao.SubmissaoOriginalId
         };
     }
 }
