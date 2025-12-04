@@ -87,32 +87,12 @@ export default function TrilhasPage() {
 
       {/* Stats */}
       {trilhas.length > 0 && (
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="mt-8 mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">{trilhas.length}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Total de Trilhas
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold">
-                {trilhas.filter(t => t.eventoId).length}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Trilhas Associadas
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold">
-                {trilhas.filter(t => !t.eventoId).length}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Trilhas Independentes
               </p>
             </CardContent>
           </Card>

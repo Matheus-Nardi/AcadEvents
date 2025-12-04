@@ -245,12 +245,6 @@ export default function AvaliadorPage() {
         <div className="space-y-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold">{convites.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">Convites pendentes</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
               <div className="text-2xl font-bold">{pendentes.length}</div>
               <p className="text-xs text-muted-foreground mt-1">Avaliações pendentes</p>
             </CardContent>

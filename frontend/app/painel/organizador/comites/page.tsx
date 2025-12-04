@@ -110,7 +110,7 @@ export default function ComitesPage() {
 
       {/* Stats */}
       {comites.length > 0 && (
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="mt-8 mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">{comites.length}</div>
