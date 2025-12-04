@@ -4,13 +4,61 @@ public static class EmailTemplateService
 {
     public static string RegistroUsuarioTemplate(string nome, string tipoUsuario)
     {
+        var (titulo, descricao, acoes) = tipoUsuario.ToUpper() switch
+        {
+            "AUTOR" => (
+                "Bem-vindo como Autor!",
+                "Seu cadastro como <strong>Autor</strong> foi realizado com sucesso na plataforma AcadEvents.",
+                new List<string>
+                {
+                    "Submeter trabalhos científicos para eventos disponíveis",
+                    "Acompanhar o status de suas submissões",
+                    "Gerenciar seu perfil acadêmico e currículo Lattes",
+                    "Visualizar feedback dos avaliadores sobre seus trabalhos"
+                }
+            ),
+            "AVALIADOR" => (
+                "Bem-vindo como Avaliador!",
+                "Seu cadastro como <strong>Avaliador</strong> foi realizado com sucesso na plataforma AcadEvents.",
+                new List<string>
+                {
+                    "Receber convites para avaliar submissões de eventos",
+                    "Avaliar trabalhos científicos com critérios detalhados",
+                    "Participar de comitês científicos quando convidado",
+                    "Gerenciar suas especialidades e disponibilidade"
+                }
+            ),
+            "ORGANIZADOR" => (
+                "Bem-vindo como Organizador!",
+                "Seu cadastro como <strong>Organizador</strong> foi realizado com sucesso na plataforma AcadEvents.",
+                new List<string>
+                {
+                    "Criar e gerenciar eventos acadêmicos",
+                    "Configurar trilhas temáticas e comitês científicos",
+                    "Acompanhar submissões e avaliações dos eventos",
+                    "Tomar decisões finais sobre trabalhos submetidos"
+                }
+            ),
+            _ => (
+                "Bem-vindo ao AcadEvents!",
+                "Seu cadastro foi realizado com sucesso na plataforma AcadEvents.",
+                new List<string>
+                {
+                    "Acessar sua conta e explorar os eventos disponíveis",
+                    "Gerenciar seu perfil acadêmico"
+                }
+            )
+        };
+
+        var acoesHtml = string.Join("", acoes.Select(acao => $"<li>{acao}</li>"));
+
         return $@"
 <!DOCTYPE html>
 <html lang=""pt-BR"">
 <head>
     <meta charset=""UTF-8"">
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-    <title>Bem-vindo ao AcadEvents</title>
+    <title>{titulo}</title>
     <style>
         body {{
             font-family: Arial, sans-serif;
@@ -51,16 +99,14 @@ public static class EmailTemplateService
 <body>
     <div class=""container"">
         <div class=""header"">
-            <h1>Bem-vindo ao AcadEvents!</h1>
+            <h1>{titulo}</h1>
         </div>
         <div class=""content"">
             <p>Olá <strong>{nome}</strong>,</p>
-            <p>É um prazer tê-lo(a) conosco! Seu cadastro como <strong>{tipoUsuario}</strong> foi realizado com sucesso na plataforma AcadEvents.</p>
-            <p>Agora você pode:</p>
+            <p>É um prazer tê-lo(a) conosco! {descricao}</p>
+            <p>Como <strong>{tipoUsuario}</strong>, você pode:</p>
             <ul>
-                <li>Acessar sua conta e explorar os eventos disponíveis</li>
-                <li>Participar de submissões e avaliações</li>
-                <li>Gerenciar seu perfil acadêmico</li>
+                {acoesHtml}
             </ul>
             <p>Se você tiver alguma dúvida ou precisar de ajuda, não hesite em entrar em contato conosco.</p>
             <p>Bem-vindo(a) e boa sorte em suas atividades acadêmicas!</p>
@@ -153,7 +199,7 @@ public static class EmailTemplateService
                 <p><strong>Status:</strong> {statusFormatado}</p>
                 <p><strong>Data da Atualização:</strong> {dataAtualizacao:dd/MM/yyyy HH:mm}</p>
             </div>
-            <p>Você pode acessar sua conta para visualizar mais detalhes sobre a atualização.</p>
+            <p>Você pode acessar o <strong>painel do autor</strong> para visualizar mais detalhes sobre a atualização, incluindo feedback dos avaliadores (quando disponível) e próximos passos.</p>
             <p>Se você tiver alguma dúvida, não hesite em entrar em contato conosco.</p>
         </div>
         <div class=""footer"">
@@ -313,8 +359,8 @@ public static class EmailTemplateService
                 </div>
             </div>
 
-            <p><strong>Lembre-se:</strong> É importante acompanhar os prazos de submissão e avaliação para garantir o sucesso do evento.</p>
-            <p>Você pode acessar a plataforma para gerenciar o evento e visualizar mais detalhes.</p>
+            <p><strong>Lembre-se:</strong> Como organizador, é importante acompanhar os prazos de submissão e avaliação para garantir o sucesso do evento.</p>
+            <p>Você pode acessar o <strong>painel do organizador</strong> para gerenciar o evento, criar comitês científicos, acompanhar submissões e tomar decisões finais quando necessário.</p>
             <p>Se você tiver alguma dúvida, não hesite em entrar em contato conosco.</p>
         </div>
         <div class=""footer"">
@@ -439,13 +485,14 @@ public static class EmailTemplateService
             <div class=""highlight"">
                 <p><strong>Parabéns!</strong> Como membro do comitê científico, você terá acesso a:</p>
                 <ul>
-                    <li>Avaliar submissões do evento</li>
-                    <li>Participar das decisões do comitê</li>
-                    <li>Contribuir para a qualidade científica do evento</li>
+                    <li>Receber convites automáticos para avaliar submissões do evento</li>
+                    <li>Avaliar trabalhos científicos com critérios detalhados (originalidade, metodologia, relevância, redação)</li>
+                    <li>Fornecer recomendações sobre cada submissão (Aprovar, Rejeitar ou Aprovar com Ressalvas)</li>
+                    <li>Contribuir para a qualidade científica do evento através de suas avaliações</li>
                 </ul>
             </div>
 
-            <p>Você pode acessar a plataforma para visualizar mais detalhes sobre o comitê e começar a avaliar submissões.</p>
+            <p>Você pode acessar o <strong>painel do avaliador</strong> para visualizar mais detalhes sobre o comitê. Quando houver submissões disponíveis para avaliação, você receberá notificações automáticas.</p>
             <p>Se você tiver alguma dúvida, não hesite em entrar em contato conosco.</p>
         </div>
         <div class=""footer"">
@@ -596,13 +643,13 @@ public static class EmailTemplateService
 
             <div class=""action-box"">
                 <h3>📋 Ação Necessária</h3>
-                <p>Para garantir que a submissão tenha o número mínimo de avaliações necessárias ({numeroRequerido}), você pode:</p>
+                <p>Como organizador, para garantir que a submissão tenha o número mínimo de avaliações necessárias ({numeroRequerido}), você pode:</p>
                 <ul>
-                    <li>Adicionar um novo avaliador ao comitê científico do evento</li>
+                    <li>Adicionar um novo avaliador ao comitê científico do evento através do painel do organizador</li>
                     <li>O novo avaliador receberá automaticamente convites para todas as submissões pendentes</li>
-                    <li>Acompanhar o status das avaliações no painel do organizador</li>
+                    <li>Acompanhar o status das avaliações e tomar decisões finais quando necessário</li>
                 </ul>
-                <p><strong>Acesse o painel do organizador</strong> para gerenciar o comitê científico e adicionar novos avaliadores quando necessário.</p>
+                <p><strong>Acesse o painel do organizador</strong> para gerenciar o comitê científico, visualizar o status das avaliações e adicionar novos avaliadores quando necessário.</p>
             </div>
 
             <p>Se você tiver alguma dúvida, não hesite em entrar em contato conosco.</p>
