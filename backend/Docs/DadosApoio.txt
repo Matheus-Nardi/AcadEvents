@@ -1,0 +1,274 @@
+================================================================================
+DADOS DE APOIO PARA POPULAÇÃO DO BANCO DE DADOS
+Sistema AcadEvents - UNITINS
+================================================================================
+
+================================================================================
+1. TRILHA CIENTÍFICA
+================================================================================
+
+Nome:
+Trilha Principal de Sistemas de Informação
+
+Descricao:
+A Trilha Principal de Sistemas de Informação reúne trabalhos científicos que abordam aspectos fundamentais, teóricos e práticos relacionados ao desenvolvimento, gestão e aplicação de sistemas de informação em diferentes contextos organizacionais e sociais. Esta trilha busca promover a discussão sobre inovações tecnológicas, metodologias de desenvolvimento, arquiteturas de sistemas, governança de TI e o impacto dos sistemas de informação na transformação digital das organizações.
+
+Coordenador:
+Leandra Cristina Cavina Piovesan Soares
+
+
+================================================================================
+2. TRILHAS TEMÁTICAS (4 trilhas)
+================================================================================
+
+--- TRILHA TEMÁTICA 1 ---
+Nome:
+Engenharia de Software e Metodologias Ágeis
+
+Descricao:
+Esta trilha temática concentra-se em pesquisas e práticas relacionadas ao desenvolvimento de software, incluindo metodologias ágeis, práticas de DevOps, arquitetura de software, padrões de design, refatoração, testes automatizados, gestão de projetos de software e qualidade de código. Trabalhos que apresentem estudos de caso, frameworks inovadores, ferramentas de apoio ao desenvolvimento e experiências práticas na indústria são especialmente bem-vindos.
+
+PalavrasChave (separadas por vírgula):
+Engenharia de Software, Metodologias Ágeis, DevOps, Arquitetura de Software, Padrões de Design, Testes Automatizados, Qualidade de Software, Gestão de Projetos
+
+
+--- TRILHA TEMÁTICA 2 ---
+Nome:
+Banco de Dados e Sistemas de Informação Gerencial
+
+Descricao:
+Esta trilha temática aborda aspectos relacionados ao projeto, implementação e gestão de bancos de dados, sistemas de informação gerencial, business intelligence, data warehousing, mineração de dados e análise de dados. Inclui trabalhos sobre modelagem de dados, otimização de consultas, sistemas transacionais, sistemas de apoio à decisão e aplicações de big data em contextos organizacionais.
+
+PalavrasChave (separadas por vírgula):
+Banco de Dados, Sistemas de Informação Gerencial, Business Intelligence, Data Warehousing, Mineração de Dados, Big Data, Sistemas de Apoio à Decisão, Modelagem de Dados
+
+
+--- TRILHA TEMÁTICA 3 ---
+Nome:
+Inteligência Artificial e Aprendizado de Máquina
+
+Descricao:
+Esta trilha temática explora aplicações de inteligência artificial, aprendizado de máquina, processamento de linguagem natural, visão computacional, sistemas especialistas e agentes inteligentes em contextos de sistemas de informação. Trabalhos que apresentem soluções práticas, algoritmos inovadores, frameworks de IA e estudos sobre o impacto da IA nas organizações são o foco desta trilha.
+
+PalavrasChave (separadas por vírgula):
+Inteligência Artificial, Aprendizado de Máquina, Processamento de Linguagem Natural, Visão Computacional, Sistemas Especialistas, Agentes Inteligentes, Deep Learning, Redes Neurais
+
+
+--- TRILHA TEMÁTICA 4 ---
+Nome:
+Segurança da Informação e Redes de Computadores
+
+Descricao:
+Esta trilha temática concentra-se em aspectos de segurança da informação, criptografia, proteção de dados, segurança em redes, gestão de vulnerabilidades, compliance e auditoria de sistemas. Inclui trabalhos sobre arquiteturas de segurança, protocolos seguros, análise de riscos, políticas de segurança e estudos sobre ameaças cibernéticas e suas mitigações.
+
+PalavrasChave (separadas por vírgula):
+Segurança da Informação, Criptografia, Redes de Computadores, Proteção de Dados, Gestão de Vulnerabilidades, Compliance, Auditoria de Sistemas, Cibersegurança
+
+
+================================================================================
+3. EVENTO (apenas campos string/inputs longos - sem datas)
+================================================================================
+
+Nome:
+I Congresso de Sistemas de Informação da UNITINS - COSI UNITINS 2025
+
+Descricao:
+O I Congresso de Sistemas de Informação da UNITINS (COSI UNITINS 2025) é um evento acadêmico-científico promovido pela Universidade Estadual do Tocantins, através do curso de Sistemas de Informação do Câmpus Palmas. O evento tem como objetivo promover a disseminação de conhecimento científico, tecnológico e inovador na área de Sistemas de Informação, proporcionando um espaço de discussão, troca de experiências e networking entre pesquisadores, profissionais, estudantes e empresas do setor de tecnologia da informação.
+
+O COSI UNITINS 2025 busca fomentar a produção científica regional, estimular a pesquisa aplicada e fortalecer os laços entre a academia e o mercado de trabalho. O evento contará com palestras, minicursos, apresentações de trabalhos científicos, mesas-redondas e sessões técnicas, abordando temas atuais e relevantes para a área de Sistemas de Informação, como engenharia de software, inteligência artificial, segurança da informação, banco de dados, redes de computadores e gestão de sistemas de informação.
+
+Local:
+Universidade Estadual do Tocantins - UNITINS
+Câmpus Palmas
+108 Sul Alameda 11 Lote 03
+Palmas - TO, CEP: 77020-122
+
+Site:
+https://cosi.unitins.br
+
+Logo:
+https://cosi.unitins.br/assets/logo-cosi-2025.png
+
+
+================================================================================
+4. COMITÊ CIENTÍFICO
+================================================================================
+
+Nome:
+Comitê Científico de Revisão - COSI UNITINS 2025
+
+Tipo:
+revisão
+
+Descricao:
+O Comitê Científico de Revisão do COSI UNITINS 2025 é responsável pela avaliação e revisão de todos os trabalhos científicos submetidos ao evento. O comitê é composto por pesquisadores e profissionais experientes na área de Sistemas de Informação, com expertise em diferentes subáreas como engenharia de software, banco de dados, inteligência artificial e segurança da informação. Os membros do comitê realizam a revisão por pares (peer review) dos trabalhos submetidos, avaliando critérios como originalidade, metodologia, relevância científica, qualidade da redação e contribuição para a área. O processo de revisão é conduzido de forma ética, imparcial e confidencial, garantindo a qualidade científica dos trabalhos aceitos para apresentação no evento.
+
+
+================================================================================
+5. SUBMISSÕES (4 submissões - uma para cada trilha temática)
+================================================================================
+
+--- SUBMISSÃO 1 (Trilha: Engenharia de Software e Metodologias Ágeis) ---
+Titulo:
+Aplicação de DevOps em Projetos de Software: Um Estudo de Caso em Empresas de Pequeno Porte no Tocantins
+
+Resumo:
+Este trabalho apresenta um estudo sobre a aplicação de práticas DevOps em projetos de software desenvolvidos por empresas de pequeno porte no estado do Tocantins. A pesquisa investiga os desafios, benefícios e barreiras encontradas na adoção de metodologias DevOps, incluindo integração contínua, entrega contínua, automação de testes e monitoramento de aplicações. Foram realizadas entrevistas com equipes de desenvolvimento de cinco empresas locais, analisando o impacto das práticas DevOps na qualidade do software, tempo de entrega e satisfação dos clientes. Os resultados indicam que, apesar das dificuldades iniciais relacionadas à mudança cultural e necessidade de capacitação, as empresas que adotaram práticas DevOps obtiveram melhorias significativas na velocidade de entrega e na redução de bugs em produção. O estudo contribui para a compreensão da aplicabilidade de metodologias ágeis e DevOps em contextos regionais, oferecendo insights práticos para pequenas empresas que desejam modernizar seus processos de desenvolvimento de software.
+
+PalavrasChave (separadas por vírgula):
+DevOps, Integração Contínua, Entrega Contínua, Metodologias Ágeis, Qualidade de Software, Pequenas Empresas, Estudo de Caso
+
+Referências (mínimo 2):
+--- REFERÊNCIA 1 ---
+DOI:
+10.1109/MS.2016.42
+Autores:
+Kim, G., Humble, J., Debois, P., & Willis, J.
+Titulo:
+The DevOps Handbook: How to Create World-Class Agility, Reliability, and Security in Technology Organizations
+Ano:
+2016
+Publicacao:
+IT Revolution
+
+--- REFERÊNCIA 2 ---
+DOI:
+10.1109/ICSE.2015.179
+Autores:
+Bass, L., Weber, I., & Zhu, L.
+Titulo:
+DevOps: A Software Architect's Perspective
+Ano:
+2015
+Publicacao:
+Addison-Wesley Professional
+
+Avaliadores (2 avaliadores relacionados):
+- Avaliador 1: Especialista em Engenharia de Software e Metodologias Ágeis
+- Avaliador 2: Especialista em DevOps e Qualidade de Software
+
+
+--- SUBMISSÃO 2 (Trilha: Banco de Dados e Sistemas de Informação Gerencial) ---
+Titulo:
+Sistema de Business Intelligence para Análise de Desempenho Acadêmico: Uma Proposta para Instituições de Ensino Superior
+
+Resumo:
+Este artigo propõe o desenvolvimento de um sistema de Business Intelligence (BI) voltado para a análise de desempenho acadêmico em instituições de ensino superior. O sistema utiliza técnicas de data warehousing e mineração de dados para processar informações históricas de alunos, permitindo a identificação de padrões de desempenho, fatores de risco de evasão e oportunidades de melhoria pedagógica. A arquitetura proposta integra dados de múltiplas fontes, incluindo sistemas acadêmicos, avaliações e indicadores socioeconômicos, utilizando um modelo dimensional para facilitar consultas analíticas. O sistema oferece dashboards interativos para gestores acadêmicos, permitindo visualizações de indicadores como taxa de aprovação por disciplina, perfil de alunos com maior risco de evasão e correlações entre desempenho acadêmico e variáveis socioeconômicas. A implementação foi realizada utilizando tecnologias open-source, demonstrando a viabilidade de soluções de BI de baixo custo para instituições públicas de ensino. Os resultados preliminares indicam que o sistema pode auxiliar significativamente na tomada de decisões estratégicas e no planejamento de ações de apoio estudantil.
+
+PalavrasChave (separadas por vírgula):
+Business Intelligence, Data Warehousing, Mineração de Dados, Análise de Desempenho Acadêmico, Sistemas de Apoio à Decisão, Educação Superior, Dashboards
+
+Referências (mínimo 2):
+--- REFERÊNCIA 1 ---
+DOI:
+10.1109/ICDE.2013.6544834
+Autores:
+Kimball, R., & Ross, M.
+Titulo:
+The Data Warehouse Toolkit: The Definitive Guide to Dimensional Modeling
+Ano:
+2013
+Publicacao:
+Wiley
+
+--- REFERÊNCIA 2 ---
+DOI:
+10.1109/ICDE.2005.143
+Autores:
+Inmon, W. H.
+Titulo:
+Building the Data Warehouse
+Ano:
+2005
+Publicacao:
+Wiley
+
+Avaliadores (2 avaliadores relacionados):
+- Avaliador 1: Especialista em Business Intelligence e Data Warehousing
+- Avaliador 2: Especialista em Sistemas de Informação Gerencial e Mineração de Dados
+
+
+--- SUBMISSÃO 3 (Trilha: Inteligência Artificial e Aprendizado de Máquina) ---
+Titulo:
+Sistema de Recomendação Inteligente para Seleção de Avaliadores em Eventos Científicos Utilizando Aprendizado de Máquina
+
+Resumo:
+Este trabalho apresenta o desenvolvimento de um sistema de recomendação inteligente para auxiliar na seleção de avaliadores em eventos científicos, utilizando técnicas de aprendizado de máquina. O sistema analisa o perfil acadêmico dos avaliadores potenciais, incluindo áreas de especialização, histórico de avaliações anteriores, disponibilidade e qualidade das avaliações realizadas, para sugerir os avaliadores mais adequados para cada submissão. A solução utiliza algoritmos de classificação e clustering para identificar padrões de compatibilidade entre avaliadores e trabalhos submetidos, considerando fatores como similaridade temática, experiência prévia e carga de trabalho atual. O sistema foi implementado utilizando Python e bibliotecas de machine learning, sendo testado com dados históricos de eventos científicos da área de Sistemas de Informação. Os resultados demonstram que o sistema pode melhorar significativamente a eficiência do processo de atribuição de avaliadores, reduzindo o tempo necessário para a seleção e aumentando a qualidade das avaliações através da melhor correspondência entre avaliadores e trabalhos. Além disso, o sistema contribui para a distribuição equilibrada da carga de trabalho entre os avaliadores, evitando sobrecarga e garantindo prazos de avaliação mais consistentes.
+
+PalavrasChave (separadas por vírgula):
+Sistema de Recomendação, Aprendizado de Máquina, Classificação, Clustering, Eventos Científicos, Seleção de Avaliadores, Inteligência Artificial
+
+Referências (mínimo 2):
+--- REFERÊNCIA 1 ---
+DOI:
+10.1145/2827872
+Autores:
+Ricci, F., Rokach, L., & Shapira, B.
+Titulo:
+Recommender Systems Handbook
+Ano:
+2015
+Publicacao:
+Springer
+
+--- REFERÊNCIA 2 ---
+DOI:
+10.1109/5.583256
+Autores:
+Mitchell, T. M.
+Titulo:
+Machine Learning
+Ano:
+1997
+Publicacao:
+McGraw-Hill
+
+Avaliadores (2 avaliadores relacionados):
+- Avaliador 1: Especialista em Inteligência Artificial e Sistemas de Recomendação
+- Avaliador 2: Especialista em Aprendizado de Máquina e Classificação
+
+
+--- SUBMISSÃO 4 (Trilha: Segurança da Informação e Redes de Computadores) ---
+Titulo:
+Análise de Vulnerabilidades e Proposta de Política de Segurança da Informação para Instituições Públicas de Ensino Superior
+
+Resumo:
+Este estudo apresenta uma análise abrangente de vulnerabilidades de segurança da informação em instituições públicas de ensino superior, com foco em aspectos relacionados à proteção de dados pessoais, sistemas acadêmicos e infraestrutura de rede. A pesquisa foi conduzida através de auditorias de segurança, análise de políticas existentes e entrevistas com profissionais de TI de três universidades públicas brasileiras. Foram identificadas vulnerabilidades críticas relacionadas ao gerenciamento de credenciais, falta de criptografia em comunicações internas, ausência de políticas de backup e recuperação de desastres, e deficiências na conscientização de usuários sobre segurança. Com base nos resultados da análise, foi proposta uma política de segurança da informação abrangente, alinhada com a Lei Geral de Proteção de Dados (LGPD) e normas internacionais como ISO 27001. A política proposta inclui diretrizes para classificação de dados, controle de acesso, gestão de incidentes, continuidade de negócios e treinamento de pessoal. O estudo também apresenta uma arquitetura de segurança sugerida, contemplando firewalls, sistemas de detecção de intrusão, segmentação de rede e monitoramento contínuo. A implementação da política proposta pode contribuir significativamente para a proteção de dados sensíveis de estudantes e funcionários, além de fortalecer a resiliência cibernética das instituições de ensino superior públicas.
+
+PalavrasChave (separadas por vírgula):
+Segurança da Informação, Vulnerabilidades, Política de Segurança, LGPD, Instituições de Ensino Superior, Auditoria de Segurança, Proteção de Dados, Cibersegurança
+
+Referências (mínimo 2):
+--- REFERÊNCIA 1 ---
+DOI:
+10.1109/MSP.2018.2801538
+Autores:
+Stallings, W., & Brown, L.
+Titulo:
+Computer Security: Principles and Practice
+Ano:
+2018
+Publicacao:
+Pearson
+
+--- REFERÊNCIA 2 ---
+DOI:
+10.1109/MSP.2017.2651007999
+Autores:
+Whitman, M. E., & Mattord, H. J.
+Titulo:
+Management of Information Security
+Ano:
+2017
+Publicacao:
+Cengage Learning
+
+Avaliadores (2 avaliadores relacionados):
+- Avaliador 1: Especialista em Segurança da Informação e LGPD
+- Avaliador 2: Especialista em Redes de Computadores e Cibersegurança
+
+
+================================================================================
+FIM DOS DADOS DE APOIO
+================================================================================
+

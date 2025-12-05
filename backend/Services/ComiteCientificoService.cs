@@ -336,14 +336,15 @@ public class ComiteCientificoService
         if (!submissoes.Any())
             return; // Não há submissões para criar convites
         
-        // Buscar configuração do evento para obter o prazo de avaliação
+        // Buscar configuração do evento para obter o prazo de avaliação e número requerido de avaliadores
         var evento = await _eventoRepository.FindByIdWithOrganizadoresAsync(eventoId, cancellationToken);
         if (evento?.Configuracao == null)
             return; // Não há configuração do evento
         
         var prazoAvaliacao = evento.Configuracao.PrazoAvaliacao;
+        var numeroRequeridoAvaliadores = evento.Configuracao.NumeroAvaliadoresPorSubmissao;
         
-        // Criar convites para o avaliador para cada submissão
+        // Criar convites para o avaliador apenas para submissões que ainda não atingiram o limite
         var convites = new List<ConviteAvaliacao>();
         
         foreach (var submissao in submissoes)
@@ -354,7 +355,16 @@ public class ComiteCientificoService
                 submissao.Id, 
                 cancellationToken);
             
-            if (!conviteExistente)
+            if (conviteExistente)
+                continue; // Já existe convite, pular esta submissão
+            
+            // Contar quantos convites já foram aceitos para esta submissão
+            var convitesAceitos = await _conviteAvaliacaoRepository.CountConvitesAceitosPorSubmissaoAsync(
+                submissao.Id, 
+                cancellationToken);
+            
+            // Criar convite apenas se ainda não atingiu o limite de avaliadores requeridos
+            if (convitesAceitos < numeroRequeridoAvaliadores)
             {
                 convites.Add(new ConviteAvaliacao
                 {
