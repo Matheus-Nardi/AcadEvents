@@ -147,8 +147,11 @@ export default function TrilhasPage() {
                 <Button
                   variant="outline"
                   className="w-full"
+                  asChild
                 >
-                  Ver Detalhes
+                  <Link href={`/painel/organizador/trilhas/${trilha.id}`}>
+                    Ver Detalhes
+                  </Link>
                 </Button>
               </CardFooter>
             </Card>
